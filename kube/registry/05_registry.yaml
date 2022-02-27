@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  selector:
+      matchLabels:
+        app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+        - image: registry:2
+          imagePullPolicy: IfNotPresent
+          name: registry
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "1m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+          env:
+          - name: REGISTRY_HTTP_ADDR
+            value: 0.0.0.0:5000
+          - name: REGISTRY_HTTP_PREFIX
+            value: /
+          - name: REGISTRY_HTTP_HOST
+            value: http://registry:5000
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: "/certs/tls.crt"
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: "/certs/tls.key"
+          ports:
+          - containerPort: 5000
+            protocol: TCP
+            name: web
+          volumeMounts:
+          - name: registry
+            mountPath: /var/lib/registry
+          - name: certs
+            mountPath: /certs
+            readOnly: true
+      volumes:
+      - name: registry
+        emptyDir: {}
+      - name: certs
+        secret:
+          secretName: registry-tls
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: registry
+spec:
+  type: LoadBalancer
+  selector:
+    app: registry
+  ports:
+  - name: web
+    port: 5000
+    targetPort: web

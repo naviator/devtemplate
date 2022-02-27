@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-commands
+data:
+  build_image: |
+    #!/bin/sh
+    executor --registry-certificate registry:5000=/certs/tls.crt --destination=registry:5000${PWD}:latest --force
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: environ
+spec:
+  serviceName: environ
+  selector:
+      matchLabels:
+        app: environ
+  template:
+    metadata:
+      labels:
+        app: environ
+    spec:
+      containers:
+      - name: dev
+        image: gcr.io/kaniko-project/executor:v1.7.0-debug
+        command: ["sleep", "infinity"]
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        - name: certs
+          mountPath: /certs
+        - name: bin
+          mountPath: /usr/bin/
+      terminationGracePeriodSeconds: 3
+      volumes:
+      - name: bin
+        configMap:
+          defaultMode: 0755
+          name: image-commands
+      - name: containers
+        emptyDir: {}
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: workspace
+      - name: certs
+        secret:
+          secretName: registry-tls
