@@ -1,1 +1,2 @@
-00_secrets.yaml
+client.cert
+client.key
