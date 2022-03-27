@@ -1,0 +1,8 @@
+
+Host dev-forward
+    User root
+    UserKnownHostsFile /dev/null
+    StrictHostKeyChecking no
+    HostName localhost
+    Port 2222
+    ForwardAgent yes
