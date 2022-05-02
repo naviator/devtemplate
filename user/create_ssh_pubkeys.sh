@@ -1,13 +1,14 @@
 #!/bin/bash
 
-USER_SSH=user-ssh
-if kubectl get secrets ${USER_SSH} --no-headers ; then
-    echo "Secret ${USER_SSH} exists, quitting..."
+set -eu
+
+if kubectl get configmap ${USER_SSH} --no-headers ; then
+    echo "${USER_SSH} exists, quitting..."
     exit 0
 fi
 
 echo "Uploading SSH public keys..."
-SSH_KEYS=$HOME/.ssh
+SSH_KEYS=${SSH_KEYS:-$HOME/.ssh}
 
 tmpfile=$(mktemp)
 
@@ -17,6 +18,6 @@ for pub_key in $(ls $SSH_KEYS/*.pub); do
     cat $pub_key >> $tmpfile
 done
 
-kubectl create secret generic ${USER_SSH} --from-file=authorized_keys=$tmpfile
+kubectl create configmap ${USER_SSH} --from-file=authorized_keys=$tmpfile
 
 rm "$tmpfile"

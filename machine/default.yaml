@@ -14,10 +14,18 @@
 # This example requires Lima v0.7.0 or later.
 
 images:
-# Hint: run `limactl prune` to invalidate the "current" cache
-- location: "https://cloud-images.ubuntu.com/impish/current/impish-server-cloudimg-amd64.img"
+# Try to use release-yyyyMMdd image if available. Note that release-yyyyMMdd will be removed after several months.
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release-20220420/ubuntu-22.04-server-cloudimg-amd64.img"
   arch: "x86_64"
-- location: "https://cloud-images.ubuntu.com/impish/current/impish-server-cloudimg-arm64.img"
+  digest: "sha256:de5e632e17b8965f2baf4ea6d2b824788e154d9a65df4fd419ec4019898e15cd"
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release-20220420/ubuntu-22.04-server-cloudimg-arm64.img"
+  arch: "aarch64"
+  digest: "sha256:66224c7fed99ff5a5539eda406c87bbfefe8af6ff6b47d92df3187832b5b5d4f"
+# Fallback to the latest release image.
+# Hint: run `limactl prune` to invalidate the cache
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
+  arch: "x86_64"
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-arm64.img"
   arch: "aarch64"
 
 # CPUs: if you see performance issues, try limiting cpus to 1.
@@ -32,14 +40,25 @@ disk: 100GiB
 # containerd is managed by k3s, not by Lima, so the values are set to false here.
 containerd:
   system: false
-  user: false
+  user: true
+
+mounts:
+- location: "~"
+- location: "/tmp/lima"
+  writable: true
 
 provision:
 - mode: system
   script: |
-    #!/bin/sh
+    #!/bin/bash
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-user-static podman
     curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.22.6+k3s1 INSTALL_K3S_EXEC="server --disable=traefik" sh -s -
-    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-user-static
+- mode: user
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    systemctl --user enable --now podman.socket
 probes:
 - script: |
     #!/bin/bash
@@ -52,9 +71,17 @@ probes:
     The k3s kubeconfig file has not yet been created.
     Run "limactl shell k3s sudo journalctl -u k3s" to check the log.
     If that is still empty, check the bottom of the log at "/var/log/cloud-init-output.log".
+portForwards:
+- guestSocket: "/run/user/{{.UID}}/podman/podman.sock"
+  hostSocket: "{{.Dir}}/sock/podman.sock"
 message: |
   To run `kubectl` on the host (assumes kubectl is installed):
-  $ mkdir -p "{{.Dir}}/conf"
-  $ export KUBECONFIG="{{.Dir}}/conf/kubeconfig.yaml"
-  $ limactl shell {{.Name}} sudo cat /etc/rancher/k3s/k3s.yaml >$KUBECONFIG
-  $ kubectl ...
+  mkdir -p "{{.Dir}}/conf"
+  export KUBECONFIG="{{.Dir}}/conf/kubeconfig.yaml"
+  limactl shell {{.Name}} sudo cat /etc/rancher/k3s/k3s.yaml >$KUBECONFIG
+  kubectl ...
+  To run `podman` on the host (assumes podman-remote is installed), run the following commands:
+  ------
+  podman system connection add lima "unix://{{.Dir}}/sock/podman.sock"
+  podman system connection default lima
+  podman{{if eq .HostOS "linux"}} --remote{{end}} run hello-world

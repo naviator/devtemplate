@@ -6,24 +6,34 @@ metadata:
 data:
   build_image: |
     #!/bin/sh
-    executor --registry-certificate registry:5000=/certs/tls.crt --destination=registry:5000${PWD}:latest --force
+    CONTAINERFILE="Dockerfile"
+    if [ -f Containerfile ]; then
+      CONTAINERFILE="Containerfile"
+    fi
+    executor --registry-certificate registry:5000=/certs/tls.crt --destination=registry:5000${PWD}:latest --force -f ${CONTAINERFILE} --cache=true --cache-dir=/cache
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: environ
+  name: debug
 spec:
-  serviceName: environ
+  serviceName: debug
   selector:
       matchLabels:
-        app: environ
+        app: debug
   template:
     metadata:
       labels:
-        app: environ
+        app: debug
     spec:
       containers:
-      - name: dev
+      - name: debug
+        image: fedora:35
+        command: ["sleep", "infinity"]
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      - name: build
         image: gcr.io/kaniko-project/executor:v1.7.0-debug
         command: ["sleep", "infinity"]
         volumeMounts:
@@ -32,14 +42,16 @@ spec:
         - name: certs
           mountPath: /certs
         - name: bin
-          mountPath: /usr/bin/
+          mountPath: /usr/local/bin/
+        - name: cache
+          mountPath: /cache
       terminationGracePeriodSeconds: 3
       volumes:
       - name: bin
         configMap:
           defaultMode: 0755
           name: image-commands
-      - name: containers
+      - name: cache
         emptyDir: {}
       - name: workspace
         persistentVolumeClaim:

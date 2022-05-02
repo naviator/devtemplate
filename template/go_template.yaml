@@ -47,7 +47,6 @@ spec:
           value: /usr/local/go
         - name: PATH
           value: "/usr/local/go/bin/:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-        livenessProbe: null
         resources:
           requests:
             memory: 100Mi

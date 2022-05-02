@@ -1,0 +1,58 @@
+FROM fedora:35
+
+RUN dnf install -y \
+	zsh git gnupg2 \
+	nano vim curl \
+	iputils ca-certificates \
+	wget fzf tig bash-completion gcc \
+	libev-devel libffi-devel virtualenv \
+	procps meld \
+	rsync pinentry
+
+# GCloud SDK requires Python 3.7
+RUN dnf install -y \
+	python3.7 python3-pip python3-devel
+
+# tooling (unzip for terraform)
+RUN dnf install -y \
+	unzip jq parallel make
+
+RUN if [ "$(uname -m)" = "aarch64" ]; then export ARCH="arm"; else export ARCH="x86_64"; fi; \
+	wget -qO /tmp/gsdk.tar.gz https://storage.googleapis.com/cloud-sdk-release/google-cloud-sdk-360.0.0-linux-${ARCH}.tar.gz && \
+    tar xf /tmp/gsdk.tar.gz -C /usr/lib/ && \
+    rm -rf /tmp/gsdk.tar.gz
+
+RUN if [ "$(uname -m)" = "aarch64" ]; then export ARCH="aarch64"; else export ARCH="x86_64"; fi; \
+	wget -qO /tmp/sops.rpm https://github.com/mozilla/sops/releases/download/v3.7.2/sops-3.7.2-1.${ARCH}.rpm && \
+	rpm -i /tmp/sops.rpm && \
+	rm -rf /tmp/sops.rpm
+
+ENV CLOUDSDK_PYTHON=/usr/bin/python3.7
+RUN CLOUDSDK_CORE_DISABLE_PROMPTS=1 /usr/lib/google-cloud-sdk/install.sh -q
+ENV PATH="/usr/lib/google-cloud-sdk/bin/:${PATH}"
+
+RUN if [ "$(uname -m)" = "aarch64" ]; then export ARCH="arm64"; else export ARCH="amd64"; fi; \
+    wget -qO /usr/local/bin/kubectl "https://dl.k8s.io/release/v1.23.4/bin/linux/${ARCH}/kubectl" && \
+	chmod a+x /usr/local/bin/kubectl
+
+RUN dnf install -y \
+	python3.10
+
+ARG USER=dev
+ARG UID=1000
+
+RUN groupadd -g ${UID} ${USER} && \
+    useradd -u ${UID} -g ${USER} -d /data -s /bin/zsh ${USER}
+
+ENV KUBECONFIG /data/.kube/config
+
+RUN echo "${USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USER}
+
+RUN cd /etc/skel && \
+    git clone https://github.com/ohmyzsh/ohmyzsh.git .oh-my-zsh && \
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git .oh-my-zsh/custom/themes/powerlevel10k && \
+    git clone https://github.com/zsh-users/zsh-autosuggestions .oh-my-zsh/custom/plugins/zsh-autosuggestions
+
+WORKDIR /data
+
+CMD sleep infinity

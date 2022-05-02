@@ -1,0 +1,10 @@
+# template for $HOME/.ssh/config
+
+Host dev-local
+    IdentityFile ~/.lima/_config/user
+    UserKnownHostsFile /dev/null
+    StrictHostKeyChecking no
+    NoHostAuthenticationForLocalhost yes
+    HostName localhost
+    Port 60022
+    ForwardAgent yes

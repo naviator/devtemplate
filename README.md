@@ -4,9 +4,11 @@
 
 ### Mac OS X
 
+Install LIMA-VM: `https://github.com/lima-vm/lima#installation`
+
 Create lima-vm machine using included config file:
 ```
-limactl start machine/default.yaml
+make machine
 ```
 
 Copy KUBECONFIG file:
@@ -17,8 +19,10 @@ sed -i '' 's/ default/ lima/g' ~/.kube/lima-config
 
 ## Persistence
 
+On localhost, PVC for pods can use local-path with:
+
 ```
-kubectl apply -f kube/01_persistence.yaml
+  storageClassName: local-path
 ```
 
 ## Install local registry

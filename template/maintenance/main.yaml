@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workspace
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance
+  labels:
+    app: maintenance
+spec:
+  selector:
+    matchLabels:
+      app: maintenance
+  template:
+    metadata:
+      labels:
+        app: maintenance
+    spec:
+      initContainers:
+      - name: init
+        image: registry:5000/maintenance
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - 
+          echo "Update home..."
+          rsync -aLv /etc/skel/ /data;
+          rsync -aLv /config/user-default/ /data;
+          rsync -aLv /config/project-default/ /data;
+          mkdir -p /data/.ssh; chmod 0700 /data/.ssh; cat /config/user-ssh/authorized_keys > /data/.ssh/authorized_keys;
+          chown -R 1000:1000 /data;
+          echo "Init done...";
+        volumeMounts:
+        - name: workspace
+          subPath: maintenance
+          mountPath: /data
+        - name: user-default
+          mountPath: /config/user-default
+        - name: project-default
+          mountPath: /config/project-default
+        - name: user-ssh
+          mountPath: /config/user-ssh
+      containers:
+      - name: main
+        image: registry:5000/maintenance
+        command:
+        - /bin/bash
+        - -c
+        args:
+        - 
+          sudo /devscripts/entrypoint.sh
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+        volumeMounts:
+        - name: workspace
+          subPath: maintenance
+          mountPath: /data
+        - name: devscripts
+          mountPath: /devscripts
+      serviceAccountName: dev
+      terminationGracePeriodSeconds: 1
+      volumes:
+      - name: devscripts
+        configMap:
+          name: devscripts
+          defaultMode: 0755
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: workspace
+      - name: user-ssh
+        configMap:
+          name: user-ssh
+          defaultMode: 0600
+      - name: user-default
+        configMap:
+          name: user-default
+          defaultMode: 0600
+      - name: project-default
+        configMap:
+          name: maintenance-default
+          defaultMode: 0600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maintenance
+spec:
+  selector:
+    app: maintenance
+  ports:
+  - name: ssh
+    port: 22
+    targetPort: 22
