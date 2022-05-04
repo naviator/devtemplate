@@ -78,7 +78,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: user-default
+  name: user-home
 data:
   .profile: |
     if [ -f /etc/profile ]; then

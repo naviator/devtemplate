@@ -4,13 +4,13 @@ include .env
 
 machine: .env
 	if [ ! -d ${HOME}/.lima/${MACHINE} ]; then \
-		limactl start --name=${MACHINE} machine/default.yaml; \
+		limactl start --name=${MACHINE} machine/${MACHINE}.yaml; \
 	else \
-		limactl start default; \
+		limactl start ${MACHINE}; \
 	fi
-	mkdir -p "${HOME}/.lima/${MACHINE}/conf"
 	K3S_CONFIG=${HOME}/.lima/${MACHINE}/conf/kubeconfig.yaml; \
 	if [ ! -f $${K3S_CONFIG} ]; then \
+		mkdir -p "${HOME}/.lima/${MACHINE}/conf"; \
 		limactl shell default sudo cat /etc/rancher/k3s/k3s.yaml > $${K3S_CONFIG}; \
 	fi
 	cd machine/registry && MACHINE=${MACHINE} ./generate_tls.sh
@@ -18,13 +18,14 @@ machine: .env
 	kubectl apply -f machine/registry/
 
 machine_stop:
-	limactl stop ${MACHINE}
+	limactl stop -f ${MACHINE}
 
 machine_nuke: machine_stop
+	sleep 3
 	limactl delete ${MACHINE}
 
 user:
-	USER_SSH="${USER}-ssh" ./user/create_ssh_pubkeys.sh
+	USER_SSH="user-ssh" ./user/create_ssh_pubkeys.sh
 	kubectl apply -f user/${USER}.yaml
 
 .env:

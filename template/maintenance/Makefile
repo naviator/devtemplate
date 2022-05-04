@@ -3,7 +3,7 @@ include .env
 .PHONY: build push up down home home_secrets default
 
 up:
-	kubectl apply -f ../01_persistence.yaml -f main.yaml
+	kubectl apply -f main.yaml
 	sleep 1
 	POD=$$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -l app=${app}); \
 	echo "rsync Git config to $${POD}"; \
