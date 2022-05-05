@@ -10,12 +10,13 @@ data:
 
     sed -i 's/127.0.0.1[[:blank:]]*localhost/127.0.0.1 registry localhost/g' /etc/hosts
     if [ -d "/usr/local/share/ca-certificates/" ]; then
-      echo "$TRUSTED_CERT" > /usr/local/share/ca-certificates/ca.crt
+      echo "$TRUSTED_CERT" > /usr/local/share/ca-certificates/registry.crt
       update-ca-certificates
       systemctl restart k3s.service
     elif [ -d "/etc/pki/ca-trust/source/anchors/" ]; then
-      echo "$TRUSTED_CERT" > /etc/pki/ca-trust/source/anchors/ca.crt
+      echo "$TRUSTED_CERT" > /etc/pki/ca-trust/source/anchors/registry.crt
       update-ca-trust
+      systemctl restart k3s.service
     else
       echo "Cannot install certificate"
       exit 1

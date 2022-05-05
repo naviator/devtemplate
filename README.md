@@ -17,21 +17,12 @@ limactl shell default sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/lima-config
 sed -i '' 's/ default/ lima/g' ~/.kube/lima-config
 ```
 
-## Persistence
-
-On localhost, PVC for pods can use local-path with:
-
-```
-  storageClassName: local-path
-```
-
 ## Install local registry
 
-Installing registry allows to build development images on localhost.
-Generate new TLS secret using `kube/registry/generate_tls.sh`.
+Installing registry allows to build development images on localhost. It also generates TLS certificate for you and installs it in local VM for `kubelet` to use.
 
 ```
-kubectl apply -f kube/registry
+kubectl apply -f machine/registry/
 ```
 
 ## Syncing with localhost

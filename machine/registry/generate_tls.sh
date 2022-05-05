@@ -4,6 +4,8 @@ set -eu
 
 REGISTRY_TLS="registry-tls"
 
+kubectl wait node -l node-role.kubernetes.io/master=true --for condition=ready --timeout=10s || exit 1
+
 if kubectl get secret ${REGISTRY_TLS} --no-headers ; then
     echo "${REGISTRY_TLS} exists, quitting..."
     exit 0
@@ -25,4 +27,4 @@ if [ ! -f client.cert ]; then
 fi
 
 kubectl create secret tls ${REGISTRY_TLS} --cert=client.cert --key=client.key
-rm client.key
+rm client.key client.cert

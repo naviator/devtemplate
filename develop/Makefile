@@ -1,17 +1,18 @@
 include .env
 
-.PHONY: build push up down home home_secrets default
+.PHONY: build push up down
 
 up:
-	kubectl apply -f main.yaml
+	kubectl apply -k .
+	kubectl wait deployment -l app=${app} --for condition=Available=True --timeout=10s || exit 1
 	sleep 1
 	POD=$$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -l app=${app}); \
 	echo "rsync Git config to $${POD}"; \
 	kubectl cp ${HOME}/.gitconfig -c main $${POD}:/data/.gitconfig;
-	kubectl exec -it deployment/maintenance -c main -- ${shell}
+	kubectl exec -it deployment/${app} -c main -- ${shell}
 
 down:
-	kubectl delete -f main.yaml
+	kubectl delete -k .
 
 build: .env
 	BUILDKIT_PROGRESS=plain TMPDIR=/tmp DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 \
@@ -19,17 +20,10 @@ build: .env
 	-t ${IMAGE} \
 	--build-arg USER=${CONTAINER_USER} \
 	--build-arg UID=${CONTAINER_UID} \
-	.
+	image/
 
 push:
 	${OCI} push ${IMAGE}
-
-secrets:
-	@echo "rsync secrets in a few seconds, make sure you trust this project. ABORT otherwise..."; \
-	sleep 3
-	POD=$$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -l app=${app}); \
-	../../sync.sh -ra ${HOME}/.ssh/ $${POD}:/data/.ssh; \
-	../../sync.sh -ra ${HOME}/.gnupg/ $${POD}:/data/.gnupg
 
 .env:
 	if command -v podman; then \
@@ -43,6 +37,7 @@ secrets:
 	echo "shell=zsh" >> .env
 	echo "CONTAINER_USER=dev" >> .env
 	echo "CONTAINER_UID=1000" >> .env
-	echo "IMAGE=registry:5000/maintenance" >> .env
 	echo "Input app name now: "
-	@read app && echo "app=$${app}" >> .env
+	@read app && \
+	echo "app=$${app}" >> .env && \
+	echo "IMAGE=registry:5000/$${app}" >> .env

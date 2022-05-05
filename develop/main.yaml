@@ -2,58 +2,67 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: workspace
+  name: develop
 spec:
-  storageClassName: manual
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: 128Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: maintenance
+  name: develop
   labels:
-    app: maintenance
+    app: develop
 spec:
   selector:
     matchLabels:
-      app: maintenance
+      app: develop
   template:
     metadata:
       labels:
-        app: maintenance
+        app: develop
     spec:
       initContainers:
       - name: init
-        image: registry:5000/maintenance
+        image: registry:5000/develop
+        env:
+        - name: APP_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['app']
         command:
         - /bin/sh
         - -c
         args:
         - 
-          echo "Update home..."
+          echo "Update home...";
           rsync -aLv /etc/skel/ /data;
           rsync -aLv /config/user-home/ /data;
-          rsync -aLv /config/project-default/ /data;
           mkdir -p /data/.ssh; chmod 0700 /data/.ssh; cat /config/user-ssh/authorized_keys > /data/.ssh/authorized_keys;
           chown -R 1000:1000 /data;
           echo "Init done...";
         volumeMounts:
         - name: workspace
-          subPath: maintenance
+          # The variable expansion uses round brackets (not curly brackets).
+          subPathExpr: $(APP_NAME)
           mountPath: /data
         - name: user-home
           mountPath: /config/user-home
-        - name: project-profile
-          mountPath: /config/project-profile
         - name: user-ssh
           mountPath: /config/user-ssh
       containers:
       - name: main
         image: registry:5000/maintenance
+        env:
+        - name: APP_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['app']
         command:
         - /bin/bash
         - -c
@@ -65,10 +74,18 @@ spec:
           runAsGroup: 1000
         volumeMounts:
         - name: workspace
-          subPath: maintenance
+          # The variable expansion uses round brackets (not curly brackets).
+          subPathExpr: $(APP_NAME)
           mountPath: /data
         - name: devscripts
           mountPath: /devscripts
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 1Gi
+          limits:
+            cpu: 4000m
+            memory: 4Gi
       serviceAccountName: dev
       terminationGracePeriodSeconds: 1
       volumes:
@@ -78,7 +95,7 @@ spec:
           defaultMode: 0755
       - name: workspace
         persistentVolumeClaim:
-          claimName: workspace
+          claimName: develop
       - name: user-ssh
         configMap:
           name: user-ssh
@@ -87,27 +104,3 @@ spec:
         configMap:
           name: user-home
           defaultMode: 0600
-      - name: project-profile
-        configMap:
-          name: maintenance-profile
-          defaultMode: 0600
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: maintenance
-spec:
-  selector:
-    app: maintenance
-  ports:
-  - name: ssh
-    port: 22
-    targetPort: 22
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: maintenance-profile
-data:
-  .project_profile: |
-    echo "!!!No project config provided!!!"

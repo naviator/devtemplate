@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: develop
+spec:
+  selector:
+    app: develop
+  ports:
+  - name: ssh
+    port: 22
+    targetPort: 22

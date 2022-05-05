@@ -1,0 +1,19 @@
+resources:
+- "../../develop/"
+- persistence.yaml
+commonLabels:
+  app: maintenance
+patches:
+- target:
+    name: develop
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: maintenance
+configMapGenerator:
+- name: user-home
+  behavior: merge
+  files:
+  - "home/.project_profile"
+patchesStrategicMerge:
+- patch.yaml

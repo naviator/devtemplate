@@ -1,6 +1,8 @@
-.PHONY: machine machine_stop machine_nuke user
+.PHONY: default machine machine_stop machine_nuke user
 
 include .env
+
+default: machine user
 
 machine: .env
 	if [ ! -d ${HOME}/.lima/${MACHINE} ]; then \
@@ -14,7 +16,6 @@ machine: .env
 		limactl shell default sudo cat /etc/rancher/k3s/k3s.yaml > $${K3S_CONFIG}; \
 	fi
 	cd machine/registry && MACHINE=${MACHINE} ./generate_tls.sh
-	kubectl apply -f machine/persistence.yaml
 	kubectl apply -f machine/registry/
 
 machine_stop:
@@ -26,7 +27,7 @@ machine_nuke: machine_stop
 
 user:
 	USER_SSH="user-ssh" ./user/create_ssh_pubkeys.sh
-	kubectl apply -f user/${USER}.yaml
+	kubectl apply -f user/service_account.yaml
 
 .env:
 	echo "MACHINE=default" > .env

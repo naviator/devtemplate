@@ -1,0 +1,15 @@
+resources:
+- main.yaml
+- service.yaml
+configMapGenerator:
+- name: user-home
+  files:
+  - "home/.bashrc"
+  - "home/.zshrc"
+  - "home/.profile"
+  - "home/.p10k.zsh"
+- name: devscripts
+  files:
+  - "devscripts/entrypoint.sh"
+generatorOptions:
+  disableNameSuffixHash: false
