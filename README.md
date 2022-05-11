@@ -6,8 +6,9 @@
 
 Install LIMA-VM: `https://github.com/lima-vm/lima#installation`
 
-Create lima-vm machine using included config file:
+In folder `local/macos`, create lima-vm machine using included config file:
 ```
+cd local/macos
 make machine
 ```
 
