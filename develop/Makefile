@@ -1,18 +1,25 @@
 include .env
 
-.PHONY: build push up down
+.PHONY: up down run build push image
 
-up:
+up: run
+	kubectl port-forward svc/${app} --address 0.0.0.0 2222:22
+
+debug:
+	kubectl exec -it deployment/${app} -c main -- ${shell}
+
+run:
 	kubectl apply -k .
 	kubectl wait deployment -l app=${app} --for condition=Available=True --timeout=10s || exit 1
 	sleep 1
 	POD=$$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -l app=${app}); \
 	echo "rsync Git config to $${POD}"; \
 	kubectl cp ${HOME}/.gitconfig -c main $${POD}:/data/.gitconfig;
-	kubectl exec -it deployment/${app} -c main -- ${shell}
 
 down:
 	kubectl delete -k .
+
+image: build push
 
 build: .env
 	BUILDKIT_PROGRESS=plain TMPDIR=/tmp DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 \
