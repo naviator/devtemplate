@@ -28,9 +28,9 @@ if [ -f $HOME/.project_profile ]; then
     . $HOME/.project_profile
 fi
 
-if [[ ! -z ${PROJECT_REPO+x} && ! -z ${PROJECT_DIR+x} && ! -d ${PROJECT_DIR} ]]; then
+if [[ ! -z ${CHECKOUT_PROJECT+x} && ! -z ${PROJECT_DIR+x} && ! -d ${PROJECT_DIR} ]]; then
     mkdir -p "$(dirname -- "$(realpath -- "${PROJECT_DIR}")")"
-    git clone --depth 1 ${PROJECT_REPO} ${PROJECT_DIR}
+    git clone --depth 1 ${CHECKOUT_PROJECT} ${PROJECT_DIR}
     cd ${PROJECT_DIR}
 fi
 
