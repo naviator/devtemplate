@@ -16,7 +16,6 @@ fi
 
 mkdir -p /run/sshd;
 echo "PermitUserEnvironment=yes" > /etc/ssh/sshd_config.d/user_env_config;
-chmod -R 0600 /data/.ssh;
 echo "Generating SSHD server keys..."
 ssh-keygen -A
 echo "Starting SSH server...";

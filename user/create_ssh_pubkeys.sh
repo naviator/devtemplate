@@ -10,14 +10,15 @@ fi
 echo "Uploading SSH public keys..."
 SSH_KEYS=${SSH_KEYS:-$HOME/.ssh}
 
-tmpfile=$(mktemp)
+tmp_authorized=$(mktemp)
 
 for pub_key in $(ls $SSH_KEYS/*.pub); do
     echo "Using $pub_key"
     base=$(basename $pub_key)
-    cat $pub_key >> $tmpfile
+    cat $pub_key >> $tmp_authorized
 done
 
-kubectl create configmap ${USER_SSH} --from-file=authorized_keys=$tmpfile
+kubectl create configmap ${USER_SSH} \
+    --from-file=authorized_keys=$tmp_authorized
 
-rm "$tmpfile"
+rm "$tmp_authorized"

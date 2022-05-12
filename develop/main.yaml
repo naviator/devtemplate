@@ -42,9 +42,13 @@ spec:
           echo "Update home...";
           rsync -aLv /etc/skel/ /data;
           rsync -aLv /config/user-home/ /data;
-          mkdir -p /data/.ssh; chmod 0700 /data/.ssh; cat /config/user-ssh/authorized_keys > /data/.ssh/authorized_keys;
+          mkdir -p /data/.ssh; chmod 0700 /data/.ssh;
+          rsync -aLv /config/user-ssh/ /data/.ssh;
+          chmod -R 0700 /data;
           chown -R 1000:1000 /data;
           echo "Init done...";
+          ls -lah /data/*;
+          ls -lah /data/.ssh;
         volumeMounts:
         - name: workspace
           # The variable expansion uses round brackets (not curly brackets).
