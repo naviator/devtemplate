@@ -1,6 +1,6 @@
 # template for $HOME/.ssh/config
 
-Host dev-local
+Host dev-vm
     IdentityFile ~/.lima/_config/user
     UserKnownHostsFile /dev/null
     StrictHostKeyChecking no
@@ -8,3 +8,14 @@ Host dev-local
     HostName localhost
     Port 60022
     ForwardAgent yes
+
+Host dev-forward
+    User dev
+    IdentityFile ~/.ssh/id_ed25519
+    UserKnownHostsFile /dev/null
+    StrictHostKeyChecking no
+    NoHostAuthenticationForLocalhost yes
+    HostName localhost
+    Port 2222
+    ForwardAgent yes
+    ForwardX11 yes
