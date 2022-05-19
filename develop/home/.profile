@@ -31,7 +31,6 @@ fi
 if [[ ! -z ${CHECKOUT_PROJECT+x} && ! -z ${PROJECT_DIR+x} && ! -d ${PROJECT_DIR} ]]; then
     mkdir -p "$(dirname -- "$(realpath -- "${PROJECT_DIR}")")"
     git clone --depth 1 ${CHECKOUT_PROJECT} ${PROJECT_DIR}
-    cd ${PROJECT_DIR}
 fi
 
 if [[ ! -z ${PROJECT_DIR+x} && -d ${PROJECT_DIR} ]]; then
