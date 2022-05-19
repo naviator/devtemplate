@@ -5,7 +5,7 @@ include .env
 up: run
 	kubectl port-forward svc/${app} --address 0.0.0.0 2222:22
 
-debug:
+debug: run
 	kubectl exec -it deployment/${app} -c main -- ${shell}
 
 run:
