@@ -24,6 +24,9 @@ init_gcloud_connect () {
     gcloud auth application-default login --no-launch-browser
 }
 
+export CLOUDSDK_PYTHON=/usr/bin/python3.7
+export PATH=$PATH:/usr/lib/google-cloud-sdk/bin/
+
 if [ -f $HOME/.project_profile ]; then
     . $HOME/.project_profile
 fi
