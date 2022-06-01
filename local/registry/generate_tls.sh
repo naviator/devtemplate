@@ -21,7 +21,7 @@ fi
 if [ ! -f client.cert ]; then
     echo "Generating openssl cert..."
     cat client.key | limactl shell ${MACHINE} \
-    openssl req -new -x509 -text -key /dev/stdin \
+    openssl req -new -x509 -days 3652 -text -key /dev/stdin \
     -subj "/C=AT/ST=Austria/L=Vienna/O=registry/OU=registry/CN=registry/emailAddress=admin@registry" \
     -addext "subjectAltName = DNS:registry" > client.cert
 fi
