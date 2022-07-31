@@ -1,0 +1,17 @@
+FROM alpine
+
+RUN apk add --update --no-cache \
+    openssh-server
+
+ENV USER=dev UID=3000 HOME=/data
+
+RUN echo "Adding user: ${USER} (${UID})"; \
+    adduser -D -u ${UID} -h ${HOME} -s /bin/sh ${USER} && \
+    sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
+
+EXPOSE 22/tcp
+VOLUME [ "/data" ]
+
+ADD entrypoint.sh /
+
+ENTRYPOINT [ "/entrypoint.sh" ]
