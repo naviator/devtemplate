@@ -1,17 +1,24 @@
 FROM alpine
 
 RUN apk add --update --no-cache \
-    openssh-server
+    openssh-server \
+    # client is useful for debugging & rsync
+    openssh-client
 
-ENV USER=dev UID=3000 HOME=/data
+ENV USER=dev UID=3000
 
 RUN echo "Adding user: ${USER} (${UID})"; \
-    adduser -D -u ${UID} -h ${HOME} -s /bin/sh ${USER} && \
+    adduser -D -u ${UID} -s /bin/sh ${USER} && \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
 
-EXPOSE 22/tcp
-VOLUME [ "/data" ]
+RUN rm /etc/motd
+
+EXPOSE 2222/tcp
+# home of user
+VOLUME "/data"
 
 ADD entrypoint.sh /
+
+USER 3000
 
 ENTRYPOINT [ "/entrypoint.sh" ]
