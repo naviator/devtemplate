@@ -22,7 +22,7 @@ kubectl_common:
 	kubectl apply -k common 
 
 up:
-	cd local && make up
+	cd local && make up registry builder
 
 down:
 	cd local && make down
