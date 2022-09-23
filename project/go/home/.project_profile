@@ -1,6 +1,0 @@
-export GOROOT="/usr/local/go"
-export GOPATH="${HOME}/go:/go"
-export PATH=$PATH:"/usr/local/go/bin:/go/bin"
-
-export CHECKOUT_PROJECT="https://github.com/grpc/grpc-go"
-export PROJECT_DIR="${HOME}/grpc-go"

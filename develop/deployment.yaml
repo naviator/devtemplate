@@ -1,0 +1,177 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: develop
+  labels:
+    app: develop
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: develop
+  template:
+    metadata:
+      labels:
+        app: develop
+    spec:
+      shareProcessNamespace: true
+      initContainers:
+      - name: init
+        image: alpine
+        env:
+        - name: APP_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['app']
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - 
+          apk add --update --no-cache rsync && 
+          echo "Construct home...";
+          rsync -aLv /usr/home/ /data;
+          mkdir -m 700 -p /data/.ssh;
+          cp /usr/ssh/authorized_keys /data/.ssh/authorized_keys;
+          chmod 0700 /data;
+          chown -R 1000:1000 /data;
+          echo "Initialize workspace..."
+          chmod 0700 /workspace;
+          chown -R 1000:1000 /workspace;
+          echo "Init done...";
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: workspace
+          subPathExpr: $(APP_NAME)
+          mountPath: /workspace
+        - name: user-ssh
+          mountPath: /usr/ssh
+        - name: user-home
+          mountPath: /usr/home
+        securityContext:
+          privileged: true
+      containers:
+      - name: gate
+        image: ghcr.io/naviator/bastion
+        env:
+        - name: AUTHORIZED_KEYS_PATH
+          value: /usr/ssh/authorized_keys
+        - name: SSHD_CONFIG_PATH
+          value: /usr/ssh/sshd_config
+        - name: HOME
+          value: "/root"
+        - name: USER
+          value: "root"
+        - name: TARGET_SHELL
+          value: zsh
+        ports:
+        - name: ssh
+          containerPort: 2222
+        volumeMounts:
+          # sharing /tmp because autho_sock_dir was hardcoded
+          # https://github.com/openssh/openssh-portable/blob/45279abceb37c3cbfac8ba36dde8b2c8cdd63d32/session.c#L199
+        - name: tmp
+          mountPath: /tmp
+        - name: user-ssh
+          mountPath: /usr/ssh
+        - name: devscripts
+          mountPath: /devscripts
+        - name: visit-target
+          subPath: visit_target.sh
+          mountPath: /etc/profile
+        resources:
+          requests:
+            memory: 1Mi
+            cpu: 1m
+          limits:
+            memory: 1Gi
+            cpu: 2000m
+        securityContext:
+          runAsUser: 0
+          # TODO reduce privileged to required nsenter capabilites
+          privileged: true
+        startupProbe:
+          tcpSocket:
+            port: ssh
+          failureThreshold: 30
+          periodSeconds: 10
+          initialDelaySeconds: 3
+      - name: main
+        image: registry:5001/develop:latest
+        stdin: true
+        tty: true
+        env:
+        - name: APP_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['app']
+        command:
+        - /bin/bash
+        - -c
+        args:
+        - 
+          # /devscripts/provision_machine.sh && 
+          # /devscripts/provision_user.sh && 
+          /devscripts/entrypoint.sh
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: true
+        startupProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/started
+          failureThreshold: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: tmp
+          mountPath: /tmp
+        - name: workspace
+          # The variable expansion uses round brackets (not curly brackets).
+          subPathExpr: $(APP_NAME)
+          mountPath: /workspace
+        - name: devscripts
+          mountPath: /devscripts
+        resources:
+          requests:
+            cpu: 1m
+            memory: 10Mi
+          limits:
+            cpu: 6000m
+            memory: 8Gi
+      serviceAccountName: dev
+      terminationGracePeriodSeconds: 1
+      volumes:
+      - name: devscripts
+        configMap:
+          name: devscripts
+          defaultMode: 0755
+      - name:  visit-target
+        configMap:
+          name: visit-target
+          defaultMode: 0755
+      - name: data
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: workspace
+        hostPath:
+          path: /data
+          type: DirectoryOrCreate
+      - name: user-ssh
+        secret:
+          secretName: user-ssh
+          optional: false
+          defaultMode: 0600
+      - name: user-home
+        configMap:
+          name: user-home
+          defaultMode: 0600

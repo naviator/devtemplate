@@ -1,0 +1,12 @@
+resources:
+- "ssh"
+- "bastion.yaml"
+- "service_account.yaml"
+configMapGenerator:
+- name: devscripts
+  files:
+  - "devscripts/provision_machine.sh"
+  - "devscripts/provision_user.sh"
+  - "devscripts/entrypoint.sh"
+generatorOptions:
+  disableNameSuffixHash: true

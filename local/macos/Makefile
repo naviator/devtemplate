@@ -1,28 +1,39 @@
-.PHONY: machine machine_stop machine_nuke
+.PHONY: up down prune_machine
 
 include .env
 
-machine: .env
+K3S_CONFIG:=${PWD}/.KUBECONFIG
+
+up: .env
 	if [ ! -d ${HOME}/.lima/${MACHINE} ]; then \
-		limactl start --name=${MACHINE} ${MACHINE}.yaml; \
+		limactl start --name=${MACHINE} machine.yaml; \
 	else \
 		limactl start ${MACHINE}; \
 	fi
-	K3S_CONFIG=${HOME}/.lima/${MACHINE}/conf/kubeconfig.yaml; \
-	if [ ! -f $${K3S_CONFIG} ]; then \
+	yq --version
+	if [ ! -f ${K3S_CONFIG} ]; then \
 		mkdir -p "${HOME}/.lima/${MACHINE}/conf"; \
-		limactl shell default sudo cat /etc/rancher/k3s/k3s.yaml > $${K3S_CONFIG}; \
+		limactl shell ${MACHINE} sudo cat /etc/rancher/k3s/k3s.yaml > ${K3S_CONFIG}; \
 	fi
-	cd ../registry && \
-	MACHINE=${MACHINE} ./generate_tls.sh; \
-	kubectl apply -f .
+	yq e -i '.users[0].name = "${MACHINE}"' ${K3S_CONFIG}
+	yq e -i '.clusters[0].name = "${MACHINE}"' ${K3S_CONFIG}
+	yq e -i '.contexts[0].context.cluster = "${MACHINE}"' ${K3S_CONFIG}
+	yq e -i '.contexts[0].context.user = "${MACHINE}"' ${K3S_CONFIG}
+	yq e -i '.contexts[0].name = "${MACHINE}"' ${K3S_CONFIG}
+	yq e -i '.current-context = "${MACHINE}"' ${K3S_CONFIG}
+	@echo "=================================================================================================="
+	@echo "Make sure that ${K3S_CONFIG} is set in KUBECONFIG"
+	@echo "=================================================================================================="
 
-machine_stop:
-	limactl stop -f ${MACHINE}
+down:
+	limactl stop -f ${MACHINE} || echo "Could not stop machine"
 
-machine_nuke: machine_stop
+prune_machine: down
 	sleep 3
-	limactl delete ${MACHINE}
+	limactl delete ${MACHINE}; \
+	rm -f ${PWD}/.KUBECONFIG
 
 .env:
-	echo "MACHINE=default" > .env
+	@read -p "Input machine name [default]: " MACHINE && \
+	export MACHINE="$${MACHINE:-default}" && \
+	echo "MACHINE=$${MACHINE}" >> .env

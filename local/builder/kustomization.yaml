@@ -1,0 +1,45 @@
+resources:
+- "../../develop"
+commonLabels:
+  app: image-builder
+patches:
+- target:
+    name: develop
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: image-builder
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: develop
+  spec:
+    template:
+      spec:
+        containers:
+        - name: gate
+          env:
+          - name: TARGET_SHELL
+            value: bash
+        - name: main
+          image: quay.io/podman/stable
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+          - name: containers
+            mountPath: /data/.local/share/containers/
+          - name: certs
+            mountPath: /etc/containers/certs.d/registry:5001/tls.crt
+            subPath: tls.crt
+            readOnly: true
+          env:
+          - name: INSTALL_PACKAGES
+            value: "openssh-clients zsh rsync"
+        volumes:
+        - name: containers
+          emptyDir: {}
+        - name: certs
+          secret:
+            secretName: registry-tls

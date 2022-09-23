@@ -1,1 +1,7 @@
-Containes useful images to be built.
+# Build development images
+
+Usage:
+
+```
+./remote_build.sh FOLDER_NAME
+```

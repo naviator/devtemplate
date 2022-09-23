@@ -1,0 +1,46 @@
+FROM fedora:36
+
+RUN dnf install -y \
+	zsh fzf bash-completion \
+	git tig \
+	nano vim \
+	unzip jq parallel make \
+	wget curl ca-certificates \
+	procps iputils \
+	gnupg2 pinentry \
+	rsync unzip gcc
+
+RUN if [ "$(uname -m)" = "aarch64" ]; then export ARCH="arm64"; else export ARCH="amd64"; fi; \
+	wget -qO /tmp/go.tar.gz https://go.dev/dl/go1.18.1.linux-${ARCH}.tar.gz && \
+    rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    rm -rf /tmp/go.tar.gz
+
+RUN if [ "$(uname -m)" = "aarch64" ]; then export ARCH="aarch_64"; else export ARCH="x86_64"; fi; \
+    wget -qO /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.20.1/protoc-3.20.1-linux-${ARCH}.zip && \
+    unzip /tmp/protoc.zip -d /usr/local && \
+    rm -rf /tmp/protoc.zip
+
+ENV GOROOT /usr/local/go
+ENV GOPATH /go
+ENV PATH $PATH:/usr/local/go/bin:/go/bin
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+    | sh -s -- -b $(go env GOPATH)/bin v1.45.2
+
+# DEVELOPMENT
+
+RUN cd /etc/skel && \
+    git clone https://github.com/ohmyzsh/ohmyzsh.git .oh-my-zsh && \
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git .oh-my-zsh/custom/themes/powerlevel10k && \
+    git clone https://github.com/zsh-users/zsh-autosuggestions .oh-my-zsh/custom/plugins/zsh-autosuggestions
+
+ADD devuser.sh /tmp/devuser.sh
+RUN sh /tmp/devuser.sh
+
+VOLUME /data
+WORKDIR /data
+
+CMD sleep infinity

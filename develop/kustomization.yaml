@@ -1,6 +1,8 @@
 resources:
-- main.yaml
+- deployment.yaml
 - service.yaml
+commonLabels:
+  dev: enabled
 configMapGenerator:
 - name: user-home
   files:
@@ -8,8 +10,9 @@ configMapGenerator:
   - "home/.zshrc"
   - "home/.profile"
   - "home/.p10k.zsh"
-- name: devscripts
+  - "home/.gitconfig"
+- name: visit-target
   files:
-  - "devscripts/entrypoint.sh"
+  - "visit_target.sh"
 generatorOptions:
   disableNameSuffixHash: false
