@@ -21,8 +21,8 @@ develop/home/.gitconfig:
 kubectl_common:
 	kubectl apply -k common 
 
-up:
-	cd local && make up
+up: common/ssh/authorized_keys develop/home/.gitconfig
+	cd local && make up registry builder
 
 down:
 	cd local && make down

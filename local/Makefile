@@ -2,7 +2,7 @@
 
 include .env
 
-up: .env registry builder
+up: .env
 	cd ${LOCAL_VM} && make up
 
 down: .env
