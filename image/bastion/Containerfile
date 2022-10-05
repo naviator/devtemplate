@@ -2,6 +2,8 @@ FROM alpine
 
 RUN apk add --update --no-cache \
     openssh-server \
+    # newer nsenter
+    util-linux \
     # client is useful for debugging & rsync
     openssh-client
 
