@@ -4,6 +4,8 @@ RUN apk add --update --no-cache \
     openssh-server \
     # newer nsenter
     util-linux \
+    # useful for file transfer
+    rsync \
     # client is useful for debugging & rsync
     openssh-client
 
