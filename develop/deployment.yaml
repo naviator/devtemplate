@@ -72,8 +72,8 @@ spec:
         - name: ssh
           containerPort: 2222
         volumeMounts:
-          # sharing /tmp because autho_sock_dir was hardcoded
-          # https://github.com/openssh/openssh-portable/blob/45279abceb37c3cbfac8ba36dde8b2c8cdd63d32/session.c#L199
+          # sharing /tmp because auth_sock_dir was hardcoded
+          # https://github.com/openssh/libopenssh/blob/011c12f6898fba5c6f84c287ed39c16efa006012/ssh/session.c#L179
         - name: tmp
           mountPath: /tmp
         - name: user-ssh
