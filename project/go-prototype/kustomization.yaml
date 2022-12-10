@@ -25,4 +25,4 @@ patchesStrategicMerge:
       spec:
         containers:
         - name: main
-          image: registry:5001/godev
+          image: golang:1.19
