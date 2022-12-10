@@ -19,7 +19,7 @@ spec:
       shareProcessNamespace: true
       initContainers:
       - name: init
-        image: alpine
+        image: ghcr.io/naviator/bastion
         env:
         - name: APP_NAME
           valueFrom:
@@ -31,7 +31,6 @@ spec:
         - -c
         args:
         - 
-          apk add --update --no-cache rsync && 
           echo "Construct home...";
           rsync -aLv /usr/home/ /data;
           mkdir -m 700 -p /data/.ssh;
