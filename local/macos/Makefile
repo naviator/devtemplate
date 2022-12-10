@@ -34,6 +34,6 @@ prune_machine: down
 	rm -f ${PWD}/.KUBECONFIG
 
 .env:
-	@read -p "Input machine name [default]: " MACHINE && \
-	export MACHINE="$${MACHINE:-default}" && \
+	@read -p "Input machine name [devnode]: " MACHINE && \
+	export MACHINE="$${MACHINE:-devnode}" && \
 	echo "MACHINE=$${MACHINE}" >> .env
