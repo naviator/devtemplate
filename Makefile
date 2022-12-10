@@ -16,6 +16,8 @@ common/ssh/authorized_keys:
 develop/home/.gitconfig:
 	if [ -f ~/.gitconfig ]; then \
 		cp ~/.gitconfig develop/home/.gitconfig; \
+	else \
+		touch develop/home/.gitconfig; \
 	fi
 
 kubectl_common:
