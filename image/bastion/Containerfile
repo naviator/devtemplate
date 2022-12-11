@@ -7,7 +7,9 @@ RUN apk add --update --no-cache \
     # useful for file transfer
     rsync \
     # client is useful for debugging & rsync
-    openssh-client
+    openssh-client \
+    # useful for Kubernetes API & others
+    curl
 
 ENV USER=dev UID=3000
 
