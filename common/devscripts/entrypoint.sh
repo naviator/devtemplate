@@ -2,6 +2,6 @@
 
 set -eux
 
-env > ${HOME}/.env
+env > /data/.env
 date > /tmp/started
 exec tail -f /dev/null

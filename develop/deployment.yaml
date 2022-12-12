@@ -11,12 +11,16 @@ spec:
   selector:
     matchLabels:
       app: develop
+      dev-deployment: "yes"
   template:
     metadata:
       labels:
         app: develop
+        dev-deployment: "yes"
     spec:
       shareProcessNamespace: true
+      securityContext:
+        runAsUser: 1000
       initContainers:
       - name: init
         image: ghcr.io/naviator/bastion
@@ -32,20 +36,16 @@ spec:
         args:
         - 
           echo "Construct home...";
-          rsync -aLv /usr/home/ /data;
+          rsync -Lv /usr/home/ /data;
           mkdir -m 700 -p /data/.ssh;
           cp /usr/ssh/authorized_keys /data/.ssh/authorized_keys;
-          chmod 0700 /data;
-          chown -R 1000:1000 /data;
-          echo "Initialize workspace..."
-          chmod 0700 /workspace;
-          chown -R 1000:1000 /workspace;
           echo "Init done...";
         volumeMounts:
         - name: data
+          subPathExpr: $(APP_NAME)/data
           mountPath: /data
-        - name: workspace
-          subPathExpr: $(APP_NAME)
+        - name: data
+          subPathExpr: $(APP_NAME)/workspace
           mountPath: /workspace
         - name: user-ssh
           mountPath: /usr/ssh
@@ -100,7 +100,7 @@ spec:
           periodSeconds: 10
           initialDelaySeconds: 3
       - name: main
-        image: registry:5001/develop:latest
+        image: ghcr.io/naviator/bastion
         stdin: true
         tty: true
         env:
@@ -110,16 +110,9 @@ spec:
               apiVersion: v1
               fieldPath: metadata.labels['app']
         command:
-        - /bin/bash
-        - -c
-        args:
-        - 
-          # /devscripts/provision_machine.sh && 
-          # /devscripts/provision_user.sh && 
-          /devscripts/entrypoint.sh
+        - /bin/sh
+        - /devscripts/entrypoint.sh
         securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
           privileged: true
         startupProbe:
           exec:
