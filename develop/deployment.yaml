@@ -42,10 +42,10 @@ spec:
           echo "Init done...";
         volumeMounts:
         - name: data
-          subPathExpr: $(APP_NAME)/data
+          subPathExpr: home
           mountPath: /data
         - name: data
-          subPathExpr: $(APP_NAME)/workspace
+          subPathExpr: workspace
           mountPath: /workspace
         - name: user-ssh
           mountPath: /usr/ssh
@@ -123,13 +123,13 @@ spec:
           periodSeconds: 10
         volumeMounts:
         - name: data
+          subPathExpr: home
           mountPath: /data
+        - name: data
+          subPathExpr: workspace
+          mountPath: /workspace
         - name: tmp
           mountPath: /tmp
-        - name: workspace
-          # The variable expansion uses round brackets (not curly brackets).
-          subPathExpr: $(APP_NAME)
-          mountPath: /workspace
         - name: devscripts
           mountPath: /devscripts
         resources:
@@ -154,10 +154,6 @@ spec:
         emptyDir: {}
       - name: tmp
         emptyDir: {}
-      - name: workspace
-        hostPath:
-          path: /data
-          type: DirectoryOrCreate
       - name: user-ssh
         secret:
           secretName: user-ssh
