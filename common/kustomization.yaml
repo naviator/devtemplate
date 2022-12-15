@@ -8,5 +8,15 @@ configMapGenerator:
   - "devscripts/provision_machine.sh"
   - "devscripts/provision_user.sh"
   - "devscripts/entrypoint.sh"
+- name: user-home
+  files:
+  - "home/.bashrc"
+  - "home/.zshrc"
+  - "home/.profile"
+  - "home/.p10k.zsh"
+  - "home/.gitconfig"
+- name: visit-target
+  files:
+  - "visit_target.sh"
 generatorOptions:
   disableNameSuffixHash: true

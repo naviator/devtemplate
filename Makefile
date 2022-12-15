@@ -1,6 +1,6 @@
 .PHONY: default connect kubectl_common up down
 
-default: develop/home/.gitconfig common/ssh/authorized_keys kubectl_common connect
+default: common/home/.gitconfig common/ssh/authorized_keys kubectl_common connect
 
 connect:
 	sleep 1
@@ -13,11 +13,11 @@ common/ssh/authorized_keys:
 	fi
 	cp ~/.ssh/id_ed25519.pub common/ssh/authorized_keys
 
-develop/home/.gitconfig:
+common/home/.gitconfig:
 	if [ -f ~/.gitconfig ]; then \
 		cp ~/.gitconfig develop/home/.gitconfig; \
 	else \
-		touch develop/home/.gitconfig; \
+		touch common/home/.gitconfig; \
 	fi
 
 kubectl_common:

@@ -9,11 +9,6 @@ patches:
     - op: replace
       path: /metadata/name
       value: go-prototype
-configMapGenerator:
-- name: user-home
-  behavior: merge
-  files:
-  - "home/.project_profile"
 patchesStrategicMerge:
 - |-
   apiVersion: apps/v1
@@ -26,3 +21,12 @@ patchesStrategicMerge:
         containers:
         - name: main
           image: golang:1.19
+          env:
+          - name: GOROOT
+            value: "/usr/local/go"
+          - name: GOPATH
+            value: "${HOME}/go:/go"
+          - name: CHECKOUT_PROJECT
+            value: "https://github.com/grpc/grpc-go"
+          - name: PROJECT_DIR
+            value: "/workspace/grpc-go"

@@ -121,7 +121,7 @@ spec:
         - 
           sh /devscripts/provision_machine.sh &&
           sh /devscripts/provision_user.sh &&
-          sh /devscripts/entrypoint.sh 
+          sh /devscripts/entrypoint.sh
         securityContext:
           runAsUser: 0
           privileged: true

@@ -3,16 +3,3 @@ resources:
 - service.yaml
 commonLabels:
   dev: enabled
-configMapGenerator:
-- name: user-home
-  files:
-  - "home/.bashrc"
-  - "home/.zshrc"
-  - "home/.profile"
-  - "home/.p10k.zsh"
-  - "home/.gitconfig"
-- name: visit-target
-  files:
-  - "visit_target.sh"
-generatorOptions:
-  disableNameSuffixHash: false
