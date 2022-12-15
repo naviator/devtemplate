@@ -25,11 +25,3 @@ Installing registry allows to build development images on localhost. It also gen
 ```
 kubectl apply -f machine/registry/
 ```
-
-## Syncing with localhost
-
-Sync remote container folder with local folder with `rsync`. Example:
-```
-./sync.sh -ra go:/workspace/ workspace/
-```
-`rsync` needs to be installed in the image of the target container.
