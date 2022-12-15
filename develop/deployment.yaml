@@ -11,16 +11,18 @@ spec:
   selector:
     matchLabels:
       app: develop
-      dev-deployment: "yes"
+      naviator.github.com/devtemplate: deployment
   template:
     metadata:
       labels:
         app: develop
-        dev-deployment: "yes"
+        naviator.github.com/devtemplate: deployment
     spec:
       shareProcessNamespace: true
       securityContext:
         runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       initContainers:
       - name: init
         image: ghcr.io/naviator/bastion
@@ -36,8 +38,9 @@ spec:
         args:
         - 
           echo "Construct home...";
-          rsync -Lv /usr/home/ /data;
+          rsync -rLv /usr/home/ /data;
           mkdir -m 700 -p /data/.ssh;
+          echo $(id -u):$(id -g) > /tmp/.runas;
           cp /usr/ssh/authorized_keys /data/.ssh/authorized_keys;
           echo "Init done...";
         volumeMounts:
@@ -51,6 +54,8 @@ spec:
           mountPath: /usr/ssh
         - name: user-home
           mountPath: /usr/home
+        - name: tmp
+          mountPath: /tmp
         securityContext:
           privileged: true
       containers:
@@ -111,14 +116,20 @@ spec:
               fieldPath: metadata.labels['app']
         command:
         - /bin/sh
-        - /devscripts/entrypoint.sh
+        - -c
+        args:
+        - 
+          sh /devscripts/provision_machine.sh &&
+          sh /devscripts/provision_user.sh &&
+          sh /devscripts/entrypoint.sh 
         securityContext:
+          runAsUser: 0
           privileged: true
         startupProbe:
           exec:
             command:
             - cat
-            - /tmp/started
+            - /tmp/.started
           failureThreshold: 30
           periodSeconds: 10
         volumeMounts:

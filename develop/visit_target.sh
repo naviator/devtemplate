@@ -6,9 +6,9 @@ fi
 
 if [ -n "${SSH_CONNECTION}" ] ; then
     SLEEP_COMMAND=${SLEEP_COMMAND:-'tail -f /dev/null'}
-    TARGET_PID=$(ps -e -o pid,args | grep "${SLEEP_COMMAND}" | grep -v grep | awk '{print $1}')
-    UID=$(stat -c "%u %g" /proc/${TARGET_PID}/ | awk '{print $1}')
-    GID=$(stat -c "%u %g" /proc/${TARGET_PID}/ | awk '{print $2}')
+    TARGET_PID=$(cat /tmp/.pid)
+    UID=$(cat /tmp/.runas | cut -d':' -f1)
+    GID=$(cat /tmp/.runas | cut -d':' -f2)
     
     if [ $# -eq 0 ]; then
         TARGET_COMMAND=${TARGET_SHELL:-sh}

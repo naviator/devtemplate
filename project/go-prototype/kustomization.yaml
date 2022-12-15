@@ -24,9 +24,5 @@ patchesStrategicMerge:
     template:
       spec:
         containers:
-        - name: gate
-          env:
-          - name: TARGET_SHELL
-            value: bash
         - name: main
           image: golang:1.19
