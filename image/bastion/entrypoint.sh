@@ -5,7 +5,7 @@ set -eux
 echo "Backing up environment..."
 env > "${HOME}"/.env
 
-HOSTKEY=${HOSTKEY:-"${HOME}"/.sshd/hostkey}
+HOSTKEY=${HOSTKEY:-/tmp/.sshd.hostkey}
 if [ ! -f "${HOSTKEY}" ]; then
     echo "Generating SSHD server keys..."
     HOSTKEY_PARENT=$(dirname "${HOSTKEY}")
