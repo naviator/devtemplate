@@ -21,5 +21,5 @@ if [ ! -d ${HOME}/.ssh ]; then
 fi
 
 echo "Starting SSH server"
-SSHD_CONFIG_PATH=${SSHD_CONFIG_PATH:-/etc/ssh/sshd_config}
+SSHD_CONFIG_PATH=${SSHD_CONFIG_PATH:-/etc/ssh/sshd_config_override}
 exec /usr/sbin/sshd -D -f ${SSHD_CONFIG_PATH} -e

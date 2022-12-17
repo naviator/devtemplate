@@ -25,8 +25,10 @@ RUN rm /etc/motd && \
     chown ${USER}:${USER} /data/.ssh && \
     chmod 700 /data/.ssh
 
-COPY --chmod=644 sshd_config /etc/ssh/sshd_config
+COPY --chmod=644 sshd_config /etc/ssh/sshd_config_override
 COPY entrypoint.sh /
+
+ENV SSHD_CONFIG_PATH=/etc/ssh/sshd_config_override
 
 USER 3000
 EXPOSE 2222/tcp
