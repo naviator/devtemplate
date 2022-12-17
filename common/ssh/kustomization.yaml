@@ -2,6 +2,5 @@ secretGenerator:
 - name: user-ssh
   files:
   - authorized_keys
-  - sshd_config
 generatorOptions:
   disableNameSuffixHash: true

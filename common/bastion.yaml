@@ -18,10 +18,8 @@ spec:
       - name: main
         image: ghcr.io/naviator/bastion
         env:
-        - name: AUTHORIZED_KEYS_PATH
-          value: /usr/ssh/authorized_keys
-        - name: SSHD_CONFIG_PATH
-          value: /usr/ssh/sshd_config
+        - name: USER_SSH_CONTENT
+          value: /usr/ssh
         ports:
         - name: ssh
           containerPort: 2222
