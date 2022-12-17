@@ -14,13 +14,14 @@ RUN apk add --update --no-cache \
 ENV USER=dev UID=3000
 
 RUN echo "Adding user: ${USER} (${UID})"; \
-    adduser -D -u ${UID} -s /bin/sh ${USER} && \
+    adduser --disabled-password --uid ${UID} --shell /bin/sh \
+    --home /data ${USER} && \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
 
 RUN rm /etc/motd
 
 EXPOSE 2222/tcp
-# home of user
+
 VOLUME "/data"
 
 ADD entrypoint.sh /
