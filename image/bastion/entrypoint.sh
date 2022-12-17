@@ -22,8 +22,7 @@ fi
 
 if [ ! -z ${USER_SSH_CONTENT+x} ]; then 
     echo "Copying USER SSH content"
-    cp -a "${USER_SSH_CONTENT}"/. "${HOME}"/.ssh/
-    chmod 600 -R "${HOME}"/.ssh/*
+    rsync -rLv "${USER_SSH_CONTENT}/" "${HOME}"/.ssh/
 fi
 
 echo "Starting SSH server"

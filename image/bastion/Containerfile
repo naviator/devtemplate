@@ -4,7 +4,7 @@ RUN apk add --update --no-cache \
     openssh-server \
     # newer nsenter
     util-linux \
-    # useful for file transfer
+    # useful for file transfers
     rsync \
     # client is useful for debugging & rsync
     openssh-client \
@@ -25,6 +25,7 @@ RUN rm /etc/motd && \
     chown ${USER}:${USER} /data/.ssh && \
     chmod 700 /data/.ssh
 
+# keeping original /etc/ssh/sshd_config for documentation
 COPY --chmod=644 sshd_config /etc/ssh/sshd_config_override
 COPY entrypoint.sh /
 
