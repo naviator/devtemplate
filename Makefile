@@ -4,7 +4,7 @@ default: common/home/.gitconfig common/ssh/authorized_keys kubectl_common connec
 
 connect:
 	sleep 1
-	kubectl wait deployment -l app=bastion --for condition=Available=True --timeout=20s || exit 1
+	kubectl wait deployment -l naviator.github.com/devtemplate=bastion --for condition=Available=True --timeout=20s || exit 1
 	kubectl port-forward svc/bastion 2222:22
 
 common/ssh/authorized_keys:

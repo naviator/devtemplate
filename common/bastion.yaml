@@ -3,15 +3,15 @@ kind: Deployment
 metadata:
   name: bastion
   labels:
-    app: bastion
+    naviator.github.com/devtemplate: bastion
 spec:
   selector:
     matchLabels:
-      app: bastion
+      naviator.github.com/devtemplate: bastion
   template:
     metadata:
       labels:
-        app: bastion
+        naviator.github.com/devtemplate: bastion
     spec:
       terminationGracePeriodSeconds: 1
       containers:
@@ -48,7 +48,7 @@ metadata:
   name: bastion
 spec:
   selector:
-    app: bastion
+    naviator.github.com/devtemplate: bastion
   ports:
   - port: 22
     targetPort: ssh
@@ -60,7 +60,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: bastion
+      naviator.github.com/devtemplate: bastion
   policyTypes:
   - Egress
   egress:
