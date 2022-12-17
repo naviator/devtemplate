@@ -19,7 +19,11 @@ RUN echo "Adding user: ${USER} (${UID})"; \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
 
 # no need for motto of the day
-RUN rm /etc/motd
+RUN rm /etc/motd && \
+    # create ${HOME}/.ssh for user
+    mkdir /data/.ssh && \
+    chown ${USER}:${USER} /data/.ssh && \
+    chmod 700 /data/.ssh
 
 COPY --chmod=644 sshd_config /etc/ssh/sshd_config
 COPY entrypoint.sh /
