@@ -1,5 +1,0 @@
-PasswordAuthentication no
-ChallengeResponseAuthentication no
-PermitUserEnvironment yes
-X11Forwarding yes
-Port 2222
