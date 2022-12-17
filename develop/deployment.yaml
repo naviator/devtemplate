@@ -62,7 +62,7 @@ spec:
       - name: gate
         image: ghcr.io/naviator/bastion
         env:
-        - name: AUTHORIZED_KEYS_PATH
+        - name: USER_SSH_CONTENT
           value: /usr/ssh
         - name: HOME
           value: "/root"
