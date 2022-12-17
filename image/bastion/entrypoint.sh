@@ -2,22 +2,28 @@
 
 set -eux
 
-echo "Backup environment..."
-env > ${HOME}/.env
+echo "Backing up environment..."
+env > "${HOME}"/.env
 
-echo "Generating SSHD server keys..."
-HOSTKEY=${HOSTKEY:-${HOME}/.sshd/hostkey}
-if [ ! -f ${HOSTKEY} ]; then
+HOSTKEY=${HOSTKEY:-"${HOME}"/.sshd/hostkey}
+if [ ! -f "${HOSTKEY}" ]; then
+    echo "Generating SSHD server keys..."
     HOSTKEY_PARENT=$(dirname "${HOSTKEY}")
-    if [ ! -d ${HOSTKEY_PARENT} ]; then
-        mkdir -m 700 -p ${HOSTKEY_PARENT}
+    if [ ! -d "${HOSTKEY_PARENT}" ]; then
+        mkdir -m 700 -p "${HOSTKEY_PARENT}"
     fi
-    ssh-keygen -t ed25519 -q -N "" -f ${HOSTKEY}
+    ssh-keygen -t ed25519 -q -N "" -f "${HOSTKEY}"
 fi
 
-echo "Creating .ssh folder..."
-if [ ! -d ${HOME}/.ssh ]; then
-    mkdir -m 700 -p ${HOME}/.ssh
+if [ ! -d "${HOME}"/.ssh ]; then
+    echo "Creating .ssh folder..."
+    mkdir -m 700 -p "${HOME}"/.ssh
+fi
+
+if [ ! -z ${USER_SSH_CONTENT+x} ]; then 
+    echo "Copying USER SSH content"
+    cp -a "${USER_SSH_CONTENT}"/. "${HOME}"/.ssh/
+    chmod 600 -R "${HOME}"/.ssh/*
 fi
 
 echo "Starting SSH server"
