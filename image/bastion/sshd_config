@@ -1,0 +1,11 @@
+PasswordAuthentication no
+AllowAgentForwarding yes
+ChallengeResponseAuthentication no
+PermitUserEnvironment yes
+AllowTcpForwarding yes
+X11Forwarding yes
+PermitTunnel yes
+Port 2222
+HostKey /data/.sshd/hostkey
+PidFile /data/.sshd/sshd.pid
+AuthorizedKeysFile .ssh/authorized_keys

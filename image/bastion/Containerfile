@@ -8,7 +8,7 @@ RUN apk add --update --no-cache \
     rsync \
     # client is useful for debugging & rsync
     openssh-client \
-    # useful for Kubernetes API & others
+    # useful for Kubernetes API & other stuff
     curl
 
 ENV USER=dev UID=3000
@@ -18,14 +18,14 @@ RUN echo "Adding user: ${USER} (${UID})"; \
     --home /data ${USER} && \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
 
+# no need for motto of the day
 RUN rm /etc/motd
 
-EXPOSE 2222/tcp
-
-VOLUME "/data"
-
-ADD entrypoint.sh /
+COPY --chmod=644 sshd_config /etc/ssh/sshd_config
+COPY entrypoint.sh /
 
 USER 3000
+EXPOSE 2222/tcp
+VOLUME "/data"
 
 ENTRYPOINT [ "/entrypoint.sh" ]
