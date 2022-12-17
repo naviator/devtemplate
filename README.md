@@ -2,26 +2,14 @@
 
 ## Setup
 
-### Mac OS X
-
-Install LIMA-VM: `https://github.com/lima-vm/lima#installation`
-
-In folder `local/macos`, create lima-vm machine using included config file:
+An easy way to start developing is using a local [minikube](https://minikube.sigs.k8s.io) cluster. Example:
 ```
-cd local/macos
-make machine
+minikube start --driver=qemu2 --container-runtime=containerd --cpus=6 --memory=10g --disk-size=100g
 ```
+Of course, you might prefer other ways to develop locally.
 
-Copy KUBECONFIG file:
-```
-limactl shell default sudo cat /etc/rancher/k3s/k3s.yaml > ~/.kube/lima-config
-sed -i '' 's/ default/ lima/g' ~/.kube/lima-config
-```
+## Local registry
 
-## Install local registry
-
-Installing registry allows to build development images on localhost. It also generates TLS certificate for you and installs it in local VM for `kubelet` to use.
-
-```
-kubectl apply -f machine/registry/
-```
+Some ways to use locally built images:
+- [minikube registry addon](https://minikube.sigs.k8s.io/docs/handbook/registry/)
+- `sh local/registry/generate_tls.sh && kubectl apply -f local/registry/registry.yaml` (currently not working on Minikube)
