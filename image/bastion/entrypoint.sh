@@ -20,11 +20,30 @@ if [ ! -d "${HOME}"/.ssh ]; then
     mkdir -m 700 -p "${HOME}"/.ssh
 fi
 
-if [ ! -z ${USER_SSH_CONTENT+x} ]; then 
-    echo "Copying USER SSH content"
-    rsync -rLv "${USER_SSH_CONTENT}/" "${HOME}"/.ssh/
+mkdir -p "${HOME}/.sshd"
+HOSTKEY_PATH="${HOME}/.sshd/id_ed25519"
+if [ ! -z ${SSHD_HOSTKEY+x} ]; then
+    echo "Copying SSHD host key..."
+    echo "${SSHD_HOSTKEY}" > "${HOSTKEY_PATH}"
+else
+    echo "Generating new SSHD host keys..."
+    ssh-keygen -t ed25519 -q -N "" -f "${HOSTKEY_PATH}"
 fi
 
+if [ ! -z ${SSH_AUTHORIZED_KEYS+x} ]; then 
+    echo "Copying .ssh authorized keys..."
+    echo "${SSH_AUTHORIZED_KEYS}" > "${HOME}"/.ssh/authorized_keys
+else
+    echo "Authorized keys not provided."
+fi
+
+SSHD_CONFIG_PATH="${HOME}/.sshd/sshd_config"
+cp /etc/ssh/sshd_config_template "${SSHD_CONFIG_PATH}"
+
+cat << EOF >> "${SSHD_CONFIG_PATH}"
+HostKey ${HOSTKEY_PATH}
+PidFile ${HOME}/.sshd/pid
+EOF
+
 echo "Starting SSH server"
-SSHD_CONFIG_PATH=${SSHD_CONFIG_PATH:-/etc/ssh/sshd_config_override}
 exec /usr/sbin/sshd -D -f ${SSHD_CONFIG_PATH} -e
