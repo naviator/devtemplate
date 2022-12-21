@@ -41,6 +41,7 @@ SSHD_CONFIG_PATH="${HOME}/.sshd/sshd_config"
 cp /etc/ssh/sshd_config_template "${SSHD_CONFIG_PATH}"
 
 cat << EOF >> "${SSHD_CONFIG_PATH}"
+
 HostKey ${HOSTKEY_PATH}
 PidFile ${HOME}/.sshd/pid
 EOF
