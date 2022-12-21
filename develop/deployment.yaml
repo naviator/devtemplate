@@ -11,12 +11,12 @@ spec:
   selector:
     matchLabels:
       app: develop
-      naviator.github.com/devtemplate: deployment
+      naviator.github.io/devtemplate: deployment
   template:
     metadata:
       labels:
         app: develop
-        naviator.github.com/devtemplate: deployment
+        naviator.github.io/devtemplate: deployment
     spec:
       shareProcessNamespace: true
       securityContext:
