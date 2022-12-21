@@ -1,7 +1,8 @@
 #!/bin/sh
 
-if [ -f ${HOME}/.env ]; then
-    source ${HOME}/.env
+if [ -f "${HOME}/.env" ]; then
+    cat "${HOME}/.env" | grep -E "^SLEEP_COMMAND=|^TARGET_SHELL=" > "${HOME}/.env.filtered"
+    source "${HOME}/.env.filtered"
 fi
 
 if [ -n "${SSH_CONNECTION}" ] ; then

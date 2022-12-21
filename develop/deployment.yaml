@@ -39,9 +39,7 @@ spec:
         - 
           echo "Construct home...";
           rsync -rLv /usr/home/ /data;
-          mkdir -m 700 -p /data/.ssh;
           echo $(id -u):$(id -g) > /tmp/.runas;
-          cp /usr/ssh/authorized_keys /data/.ssh/authorized_keys;
           echo "Init done...";
         volumeMounts:
         - name: data
@@ -50,8 +48,6 @@ spec:
         - name: data
           subPathExpr: workspace
           mountPath: /workspace
-        - name: user-ssh
-          mountPath: /usr/ssh
         - name: user-home
           mountPath: /usr/home
         - name: tmp
@@ -70,6 +66,13 @@ spec:
           value: "root"
         - name: TARGET_SHELL
           value: zsh
+          env:
+        - name: SSH_AUTHORIZED_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: user-ssh
+              key: authorized_keys
+              optional: false
         ports:
         - name: ssh
           containerPort: 2222
@@ -78,8 +81,6 @@ spec:
           # https://github.com/openssh/libopenssh/blob/011c12f6898fba5c6f84c287ed39c16efa006012/ssh/session.c#L179
         - name: tmp
           mountPath: /tmp
-        - name: user-ssh
-          mountPath: /usr/ssh
         - name: devscripts
           mountPath: /devscripts
         - name: visit-target
@@ -163,11 +164,6 @@ spec:
         emptyDir: {}
       - name: tmp
         emptyDir: {}
-      - name: user-ssh
-        secret:
-          secretName: user-ssh
-          optional: false
-          defaultMode: 0600
       - name: user-home
         configMap:
           name: user-home
