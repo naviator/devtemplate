@@ -6,3 +6,4 @@ AllowTcpForwarding yes
 X11Forwarding yes
 PermitTunnel yes
 Port 2222
+Subsystem sftp internal-sftp
