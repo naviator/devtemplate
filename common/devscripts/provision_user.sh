@@ -2,9 +2,15 @@
 
 set -eux
 
-DEV_USERNAME=dev
 DEV_UID=$(cat /tmp/.runas | cut -d':' -f1)
 DEV_GID=$(cat /tmp/.runas | cut -d':' -f2)
+
+if [ ${DEV_UID} -eq 0 ]; then
+    echo "Running as root"
+    exit 0
+fi
+
+DEV_USERNAME=dev
 
 if id -u ${DEV_USERNAME} >/dev/null 2>&1; then
     echo 'user exists, removing'
