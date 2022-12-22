@@ -46,8 +46,8 @@ spec:
           echo "Construct home...";
           rsync -rlptD --delete --timeout=3 ${BACKUP_PATH}/data/ /data || 
           rsync -rLv /usr/home/ /data;
-          rsync -rlptD --delete --timeout=3 ${BACKUP_PATH}/workspace/ /workspace || 
-          echo "No workspace to restore";
+          rsync -rlptD --delete --timeout=3 ${BACKUP_PATH}/workspace/ /workspace ||
+          echo "Some issues when restoring workspace";
           echo $(id -u):$(id -g) > /tmp/.runas;
           echo "Init done...";
         volumeMounts:
@@ -134,6 +134,12 @@ spec:
         - name: visit-target
           subPath: visit_target.sh
           mountPath: /etc/profile
+        - name: data
+          subPathExpr: home
+          mountPath: /data
+        - name: data
+          subPathExpr: workspace
+          mountPath: /workspace
         resources:
           requests:
             memory: 1Mi

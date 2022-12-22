@@ -14,16 +14,11 @@ RUN apk add --update --no-cache \
 ENV USER=dev UID=3000
 
 RUN echo "Adding user: ${USER} (${UID})"; \
-    adduser --disabled-password --uid ${UID} --shell /bin/sh \
-    --home /data ${USER} && \
+    adduser --disabled-password --uid ${UID} --shell /bin/sh ${USER} && \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
 
 # no need for motto of the day
-RUN rm /etc/motd && \
-    # create ${HOME}/.ssh for user
-    mkdir /data/.ssh && \
-    chown ${USER}:${USER} /data/.ssh && \
-    chmod 700 /data/.ssh
+RUN rm /etc/motd
 
 # keeping original /etc/ssh/sshd_config for documentation
 COPY --chmod=644 sshd_config /etc/ssh/sshd_config_template
@@ -31,6 +26,5 @@ COPY entrypoint.sh /
 
 USER 3000
 EXPOSE 2222/tcp
-VOLUME "/data"
 
 ENTRYPOINT [ "/entrypoint.sh" ]
