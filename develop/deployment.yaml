@@ -27,18 +27,27 @@ spec:
       - name: init
         image: ghcr.io/naviator/bastion
         env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: APP_NAME
           valueFrom:
             fieldRef:
-              apiVersion: v1
               fieldPath: metadata.labels['app']
+        - name: BACKUP_PATH
+          value: "storage::backup/$(POD_NAMESPACE)/$(APP_NAME)"
         command:
         - /bin/sh
         - -c
         args:
         - 
+          set -eux;
           echo "Construct home...";
+          rsync -rlptD --delete --timeout=3 ${BACKUP_PATH}/data/ /data || 
           rsync -rLv /usr/home/ /data;
+          rsync -rlptD --delete --timeout=3 ${BACKUP_PATH}/workspace/ /workspace || 
+          echo "No workspace to restore";
           echo $(id -u):$(id -g) > /tmp/.runas;
           echo "Init done...";
         volumeMounts:
@@ -55,6 +64,45 @@ spec:
         securityContext:
           privileged: true
       containers:
+      - name: backup
+        image: ghcr.io/naviator/bastion
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: APP_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['app']
+        - name: BACKUP_PATH
+          value: "storage::backup/$(POD_NAMESPACE)/$(APP_NAME)"
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 10m
+          limits:
+            memory: 100Mi
+            cpu: 2000m
+        volumeMounts:
+        - name: data
+          subPathExpr: home
+          mountPath: /data
+        - name: data
+          subPathExpr: workspace
+          mountPath: /workspace
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - 
+          while true; do
+            sleep 10m &&
+            echo "Backup start $(date)" && 
+            rsync -rlptD --delete --mkpath /data/ ${BACKUP_PATH}/data && 
+            rsync -rlptD --delete --mkpath /workspace/ ${BACKUP_PATH}/workspace && 
+            echo "Backup complete $(date)" || exit 1;
+          done
       - name: gate
         image: ghcr.io/naviator/bastion
         env:

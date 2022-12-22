@@ -1,6 +1,7 @@
 resources:
 - "ssh"
 - "bastion.yaml"
+- "storage.yaml"
 - "service_account.yaml"
 configMapGenerator:
 - name: devscripts

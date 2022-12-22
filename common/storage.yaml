@@ -1,0 +1,107 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-rsync
+data:
+  rsyncd.conf: |
+    port = 1873
+    use chroot = false
+
+    [backup]
+    path = /backup
+    comment = BACKUP HERE
+    read only = false
+    timeout = 120
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: storage-pvc
+spec:
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage
+  labels:
+    naviator.github.io/devtemplate: storage
+spec:
+  selector:
+    matchLabels:
+      naviator.github.io/devtemplate: storage
+  template:
+    metadata:
+      labels:
+        naviator.github.io/devtemplate: storage
+    spec:
+      terminationGracePeriodSeconds: 1
+      containers:
+      - name: main
+        image: ghcr.io/naviator/bastion
+        command:
+        - /bin/sh
+        - -c
+        - rsync --daemon --no-detach --config=/etc/storage/rsyncd.conf --log-file=/dev/stdout
+        ports:
+        - name: rsyncd
+          containerPort: 1873
+        volumeMounts:
+        - name: backup
+          mountPath: /backup
+        - name: storage-rsync
+          mountPath: /etc/storage
+          readOnly: true
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 2000m
+          requests:
+            memory: 1Mi
+            cpu: 1m
+      volumes:
+      - name: backup
+        persistentVolumeClaim:
+          claimName: storage-pvc
+      - name: storage-rsync
+        configMap:
+          name: storage-rsync
+          optional: false
+          defaultMode: 0744
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage
+spec:
+  selector:
+    naviator.github.io/devtemplate: storage
+  ports:
+  - port: 873
+    targetPort: rsyncd
+    name: rsyncd
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: storage
+spec:
+  podSelector:
+    matchLabels:
+      naviator.github.io/devtemplate: storage
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          naviator.github.io/devtemplate-egress: enabled
+    ports:
+    - protocol: TCP
+      port: 873
