@@ -17,6 +17,9 @@ spec:
       labels:
         app: develop
         naviator.github.io/devtemplate: deployment
+      annotations:
+        naviator.github.io/devtemplate-backup-folders: "/data:/workspace"
+        naviator.github.io/devtemplate-backup-interval: "10m"
     spec:
       shareProcessNamespace: true
       securityContext:
@@ -44,9 +47,9 @@ spec:
         - 
           set -eux;
           echo "Construct home...";
-          rsync -rlptD --delete --timeout=3 ${BACKUP_PATH}/data/ /data || 
-          rsync -rLv /usr/home/ /data;
-          rsync -rlptD --delete --timeout=3 ${BACKUP_PATH}/workspace/ /workspace ||
+          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/data/ /data || 
+          rsync -rLvh /usr/home/ /data;
+          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/workspace/ /workspace ||
           echo "Some issues when restoring workspace";
           echo $(id -u):$(id -g) > /tmp/.runas;
           echo "Init done...";
@@ -67,6 +70,14 @@ spec:
       - name: backup
         image: ghcr.io/naviator/bastion
         env:
+        - name: BACKUP_FOLDERS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['naviator.github.io/devtemplate-backup-folders']
+        - name: BACKUP_INTERVAL
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['naviator.github.io/devtemplate-backup-interval']
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
@@ -92,22 +103,23 @@ spec:
           subPathExpr: workspace
           mountPath: /workspace
         command:
-        - /bin/sh
+        - /bin/bash
         - -c
         args:
-        - 
+        - |
+          IFS=':' read -ra BACKUP_FOLDERS_ARRAY <<< "$BACKUP_FOLDERS"
           while true; do
-            sleep 10m &&
-            echo "Backup start $(date)" && 
-            rsync -rlptD --delete --mkpath /data/ ${BACKUP_PATH}/data && 
-            rsync -rlptD --delete --mkpath /workspace/ ${BACKUP_PATH}/workspace && 
-            echo "Backup complete $(date)" || exit 1;
+            sleep ${BACKUP_INTERVAL}
+            echo "Backup start $(date)"
+            for FOLDER in "${BACKUP_FOLDERS_ARRAY[@]}"; do
+              echo "Backup ${FOLDER}"
+              rsync -rlptD --delete --mkpath ${FOLDER}/ ${BACKUP_PATH}${FOLDER} || exit 1
+            done
+            echo "Backup complete $(date)"
           done
       - name: gate
         image: ghcr.io/naviator/bastion
         env:
-        - name: USER_SSH_CONTENT
-          value: /usr/ssh
         - name: HOME
           value: "/root"
         - name: USER

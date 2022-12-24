@@ -9,7 +9,7 @@ RUN apk add --update --no-cache \
     # client is useful for debugging & rsync
     openssh-client \
     # useful for Kubernetes API & other stuff
-    curl \ 
+    curl \
     # more useful than sh
     bash
 
