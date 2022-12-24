@@ -13,3 +13,7 @@ Of course, you might prefer other ways to develop locally.
 Some ways to use locally built images:
 - [minikube registry addon](https://minikube.sigs.k8s.io/docs/handbook/registry/)
 - `sh local/registry/generate_tls.sh && kubectl apply -f local/registry/registry.yaml` (currently not working on Minikube)
+
+## Backup
+
+Backup of volumes is available via a sidecar. After 10 minutes, the `/data` and `/workspace` folders are backed up and restored via `initContainer` every 10 minutes.
