@@ -23,12 +23,13 @@ spec:
     spec:
       shareProcessNamespace: true
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
         fsGroup: 1000
       initContainers:
       - name: init
         image: ghcr.io/naviator/bastion
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -64,8 +65,6 @@ spec:
           mountPath: /usr/home
         - name: tmp
           mountPath: /tmp
-        securityContext:
-          privileged: true
       containers:
       - name: backup
         image: ghcr.io/naviator/bastion
