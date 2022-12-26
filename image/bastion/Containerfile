@@ -11,7 +11,9 @@ RUN apk add --update --no-cache \
     # useful for Kubernetes API & other stuff
     curl \
     # more useful than sh
-    bash
+    bash \
+    # deduplicating backup \
+    borgbackup
 
 ENV USER=dev UID=3000
 
