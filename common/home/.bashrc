@@ -3,7 +3,7 @@ if [ -f ~/.profile ]; then
 fi
 
 __kube_prompt() {
-    if command -v kubectl &> /dev/null && [[ $(pwd) == $KUBE_REPO_DIR* ]];
+    if command -v kubectl &> /dev/null;
     then
         echo "($(kubectl config current-context))"
     fi

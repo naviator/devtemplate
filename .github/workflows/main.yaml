@@ -9,7 +9,6 @@ jobs:
       uses: docker/setup-qemu-action@v2
     - name: Checkout
       uses: actions/checkout@v2
-
     - name: Build Bastion Image
       uses: redhat-actions/buildah-build@v2
       id: build-image
@@ -35,3 +34,28 @@ jobs:
 
     - name: Print image url
       run: echo "Image pushed to ${{ steps.push-image.outputs.registry-paths }}"
+  test-k8s:
+    name: Test K8s - kind cluster
+    runs-on: [ubuntu-latest]
+    needs: [build]
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-go@v1
+      with:
+        go-version: 1.19
+    - name: Install Kind
+      run: |
+        go install sigs.k8s.io/kind@v0.17.0
+    - name: Create Kind cluster
+      run: |
+        PATH=$(go env GOPATH)/bin:$PATH kind create cluster
+    - name: Run some sanity checks and wait
+      # kubectl is already installed on the Github Ubuntu worker
+      run: |
+        kubectl get nodes -o wide
+        kubectl get pods --all-namespaces -o wide
+        kubectl get services --all-namespaces -o wide 
+        kubectl wait --for=condition=ready --all-namespaces --all pods --timeout=60s
+    - name: Run tests
+      run: |
+        make test_k8s

@@ -6,8 +6,7 @@ resources:
 configMapGenerator:
 - name: devscripts
   files:
-  - "devscripts/provision_machine.sh"
-  - "devscripts/provision_user.sh"
+  - "devscripts/provisioning.sh"
   - "devscripts/entrypoint.sh"
 - name: user-home
   files:

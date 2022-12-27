@@ -4,8 +4,10 @@ kind: Service
 metadata:
   name: develop
 spec:
+  type: ClusterIP
   selector:
     app: develop
+    naviator.github.io/devtemplate: deployment
   ports:
   - name: ssh
     port: 2222

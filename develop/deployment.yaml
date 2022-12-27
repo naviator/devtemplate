@@ -45,16 +45,16 @@ spec:
         - -c
         args:
         - |
-          set -eux
-
           echo $(id -u):$(id -g) > /tmp/.runas;
-          
+
           echo "Construct home..."
           rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/data/ /data/ || true
           if [ ! "$(ls -A /data)" ]; then
-            rsync -rLvh /usr/home/ /data
+            echo "Empty home dir, creating from template..."
+            rsync -rLvh -v /usr/home/ /data
           fi
 
+          echo "Restoring workspace..."
           rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/workspace/ /workspace/ || true
 
           echo "Init done...";
@@ -129,7 +129,6 @@ spec:
           value: "root"
         - name: TARGET_SHELL
           value: zsh
-          env:
         - name: SSH_AUTHORIZED_KEYS
           valueFrom:
             secretKeyRef:
@@ -187,17 +186,15 @@ spec:
         - -c
         args:
         - 
-          sh /devscripts/provision_machine.sh &&
-          sh /devscripts/provision_user.sh &&
+          sh /devscripts/provisioning.sh &&
           sh /devscripts/entrypoint.sh
         securityContext:
           runAsUser: 0
-          privileged: true
         startupProbe:
           exec:
             command:
             - cat
-            - /tmp/.started
+            - /tmp/.pid
           failureThreshold: 30
           periodSeconds: 10
         volumeMounts:
