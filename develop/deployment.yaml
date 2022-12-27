@@ -23,13 +23,12 @@ spec:
     spec:
       shareProcessNamespace: true
       securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
         fsGroup: 1000
       initContainers:
       - name: init
         image: ghcr.io/naviator/bastion
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -45,14 +44,19 @@ spec:
         - /bin/sh
         - -c
         args:
-        - 
-          set -eux;
-          echo "Construct home...";
-          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/data/ /data || 
-          rsync -rLvh /usr/home/ /data;
-          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/workspace/ /workspace ||
-          echo "Some issues when restoring workspace";
+        - |
+          set -eux
+
           echo $(id -u):$(id -g) > /tmp/.runas;
+          
+          echo "Construct home..."
+          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/data/ /data/ || true
+          if [ ! "$(ls -A /data)" ]; then
+            rsync -rLvh /usr/home/ /data
+          fi
+
+          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/workspace/ /workspace/ || true
+
           echo "Init done...";
         volumeMounts:
         - name: data

@@ -48,7 +48,7 @@ spec:
         command:
         - /bin/sh
         - -c
-        - rsync --daemon --no-detach --config=/etc/storage/rsyncd.conf --log-file=/dev/stdout
+        - rsync --daemon --no-detach --config=/rsync/rsyncd.conf --log-file=/dev/stdout
         ports:
         - name: rsyncd
           containerPort: 1873
@@ -56,7 +56,7 @@ spec:
         - name: backup
           mountPath: /backup
         - name: storage-rsync
-          mountPath: /etc/storage
+          mountPath: /rsync
           readOnly: true
         resources:
           limits:
