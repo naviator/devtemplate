@@ -21,7 +21,7 @@ common/home/.gitconfig:
 kubectl_common: common/home/.gitconfig common/ssh/authorized_keys 
 	kubectl apply -k common
 	sleep 0.1
-	kubectl wait deployment -l naviator.github.io/devtemplate=bastion --for condition=Available=True --timeout=20s || exit 1
+	kubectl wait deployment -l naviator.github.io/devtemplate=bastion --for condition=Available=True --timeout=60s || exit 1
 
 up: common/ssh/authorized_keys develop/home/.gitconfig
 	cd local && make up registry builder
@@ -31,6 +31,6 @@ down:
 
 test_k8s: kubectl_common
 	make connect &
-	kubectl wait deployment -l naviator.github.io/devtemplate=bastion --for condition=Available=True --timeout=20s || exit 1
+	kubectl wait deployment -l naviator.github.io/devtemplate=bastion --for condition=Available=True --timeout=260s || exit 1
 	sleep 3
 	sh test/connect.sh

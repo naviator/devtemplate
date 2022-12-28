@@ -10,7 +10,7 @@ if [ "$EXPECTED" != "$FOUND" ]; then
 fi
 
 kubectl apply -k develop
-kubectl wait --for=condition=available --timeout=20s deployment develop
+kubectl wait --for=condition=available --timeout=60s deployment develop
 ssh -F .ssh/config develop.default "echo -n ${EXPECTED} > /tmp/somedata"
 FOUND=$(kubectl exec deployment/develop -c main -- sh -c "cat /tmp/somedata")
 
