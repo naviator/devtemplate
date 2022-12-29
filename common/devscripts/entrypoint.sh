@@ -2,10 +2,9 @@
 
 set -eux
 
-env
 ENVFILE="/data/.env"
 
-env | grep -v "^HOME=" > "${ENVFILE}"
+env | grep -vE "^HOME=|^UID=" > "${ENVFILE}"
 
 DEV_UID=$(cat /tmp/.runas | cut -d':' -f1)
 
