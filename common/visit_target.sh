@@ -26,7 +26,7 @@ if [ -n "${SSH_CONNECTION}" ] ; then
     fi
 
     exec nsenter -t ${TARGET_PID} -m -u -p -S ${UID} -G ${GID} \
-        sh -c "unset HOME USER LOGNAME MAIL SHELL; export HOME=/data,UID=${UID}; ${TARGET_COMMAND}"
+        sh -c "unset HOME USER LOGNAME MAIL SHELL; export HOME=/data; export UID=${UID}; ${TARGET_COMMAND}"
 else
     echo "Welcome to SSH sidecar"
 fi

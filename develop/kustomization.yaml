@@ -1,5 +1,3 @@
 resources:
 - deployment.yaml
 - service.yaml
-commonLabels:
-  naviator.github.io/devtemplate-egress: enabled

@@ -7,7 +7,7 @@ spec:
   type: ClusterIP
   selector:
     app: develop
-    naviator.github.io/devtemplate: deployment
+    devtemplate.naviator.github.io/role: develop
   ports:
   - name: ssh
     port: 2222

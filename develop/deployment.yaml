@@ -11,15 +11,16 @@ spec:
   selector:
     matchLabels:
       app: develop
-      naviator.github.io/devtemplate: deployment
+      devtemplate.naviator.github.io/role: develop
   template:
     metadata:
       labels:
         app: develop
-        naviator.github.io/devtemplate: deployment
+        devtemplate.naviator.github.io/role: develop
       annotations:
-        naviator.github.io/devtemplate-backup-folders: "/data:/workspace"
-        naviator.github.io/devtemplate-backup-interval: "10m"
+        devtemplate.naviator.github.io/backup-paths: "/data:/workspace"
+        devtemplate.naviator.github.io/backup-delay: "10m"
+        devtemplate.naviator.github.io/backup-interval: "5m"
     spec:
       shareProcessNamespace: true
       securityContext:
@@ -38,24 +39,29 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.labels['app']
-        - name: BACKUP_PATH
+        - name: BACKUP_REMOTE
           value: "storage::backup/$(POD_NAMESPACE)/$(APP_NAME)"
+        - name: BACKUP_PATHS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-paths']
         command:
-        - /bin/sh
+        - /bin/bash
         - -c
         args:
         - |
           echo $(id -u):$(id -g) > /tmp/.runas;
 
-          echo "Construct home..."
-          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/data/ /data/ || true
+          IFS=':' read -ra BACKUP_ARRAY <<< "$BACKUP_PATHS"
+          for FOLDER in "${BACKUP_ARRAY[@]}"; do
+            echo "Backup ${FOLDER}"
+            rsync -rlptD --delete --timeout=2 ${BACKUP_REMOTE}${FOLDER}/ ${FOLDER}/ || true
+          done
+
           if [ ! "$(ls -A /data)" ]; then
             echo "Empty home dir, creating from template..."
-            rsync -rLvh -v /usr/home/ /data
+            rsync -rLvh -v /usr/home/ /data/
           fi
-
-          echo "Restoring workspace..."
-          rsync -rlptD --delete --timeout=2 ${BACKUP_PATH}/workspace/ /workspace/ || true
 
           echo "Init done...";
         volumeMounts:
@@ -73,14 +79,18 @@ spec:
       - name: backup
         image: ghcr.io/naviator/bastion
         env:
-        - name: BACKUP_FOLDERS
+        - name: BACKUP_PATHS
           valueFrom:
             fieldRef:
-              fieldPath: metadata.annotations['naviator.github.io/devtemplate-backup-folders']
+              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-paths']
         - name: BACKUP_INTERVAL
           valueFrom:
             fieldRef:
-              fieldPath: metadata.annotations['naviator.github.io/devtemplate-backup-interval']
+              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-interval']
+        - name: BACKUP_DELAY
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-delay']
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
@@ -89,7 +99,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.labels['app']
-        - name: BACKUP_PATH
+        - name: BACKUP_REMOTE
           value: "storage::backup/$(POD_NAMESPACE)/$(APP_NAME)"
         resources:
           requests:
@@ -110,15 +120,16 @@ spec:
         - -c
         args:
         - |
-          IFS=':' read -ra BACKUP_FOLDERS_ARRAY <<< "$BACKUP_FOLDERS"
+          IFS=':' read -ra BACKUP_ARRAY <<< "$BACKUP_PATHS"
+          sleep ${BACKUP_DELAY}
           while true; do
-            sleep ${BACKUP_INTERVAL}
             echo "Backup start $(date)"
-            for FOLDER in "${BACKUP_FOLDERS_ARRAY[@]}"; do
+            for FOLDER in "${BACKUP_ARRAY[@]}"; do
               echo "Backup ${FOLDER}"
-              rsync -rlptD --delete --mkpath ${FOLDER}/ ${BACKUP_PATH}${FOLDER} || exit 1
+              rsync -rlptD --delete --mkpath ${FOLDER}/ ${BACKUP_REMOTE}${FOLDER} || exit 1
             done
             echo "Backup complete $(date)"
+            sleep ${BACKUP_INTERVAL}
           done
       - name: gate
         image: ghcr.io/naviator/bastion

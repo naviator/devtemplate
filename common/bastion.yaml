@@ -3,15 +3,15 @@ kind: Deployment
 metadata:
   name: bastion
   labels:
-    naviator.github.io/devtemplate: bastion
+    devtemplate.naviator.github.io/role: bastion
 spec:
   selector:
     matchLabels:
-      naviator.github.io/devtemplate: bastion
+      devtemplate.naviator.github.io/role: bastion
   template:
     metadata:
       labels:
-        naviator.github.io/devtemplate: bastion
+        devtemplate.naviator.github.io/role: bastion
     spec:
       terminationGracePeriodSeconds: 1
       containers:
@@ -41,7 +41,7 @@ metadata:
   name: bastion
 spec:
   selector:
-    naviator.github.io/devtemplate: bastion
+    devtemplate.naviator.github.io/role: bastion
   ports:
   - port: 2222
     targetPort: ssh
@@ -53,11 +53,12 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      naviator.github.io/devtemplate: bastion
+      devtemplate.naviator.github.io/role: bastion
   policyTypes:
   - Egress
   egress:
   - ports:
+    # SSH services and DNS
     - protocol: TCP
       port: 2222
     - protocol: UDP

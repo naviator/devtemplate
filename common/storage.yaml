@@ -31,15 +31,15 @@ kind: Deployment
 metadata:
   name: storage
   labels:
-    naviator.github.io/devtemplate: storage
+    devtemplate.naviator.github.io/role: storage
 spec:
   selector:
     matchLabels:
-      naviator.github.io/devtemplate: storage
+      devtemplate.naviator.github.io/role: storage
   template:
     metadata:
       labels:
-        naviator.github.io/devtemplate: storage
+        devtemplate.naviator.github.io/role: storage
     spec:
       terminationGracePeriodSeconds: 1
       containers:
@@ -81,7 +81,7 @@ metadata:
   name: storage
 spec:
   selector:
-    naviator.github.io/devtemplate: storage
+    devtemplate.naviator.github.io/role: storage
   ports:
   - port: 873
     targetPort: rsyncd
@@ -94,14 +94,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      naviator.github.io/devtemplate: storage
+      devtemplate.naviator.github.io/role: storage
   policyTypes:
   - Ingress
   ingress:
   - from:
     - podSelector:
         matchLabels:
-          naviator.github.io/devtemplate-egress: enabled
+          devtemplate.naviator.github.io/role: develop
     ports:
     - protocol: TCP
       port: 873
