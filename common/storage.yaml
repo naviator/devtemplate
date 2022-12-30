@@ -9,10 +9,12 @@ data:
     use chroot = false
 
     [backup]
-    path = /backup
-    comment = BACKUP HERE
+    path = /authorized
+    comment = AUTHORIZED SSH KEYS HERE
     read only = false
-    timeout = 120
+    write only = trye
+    refuse options = delete
+    timeout = 10
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -43,7 +45,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 1
       containers:
-      - name: main
+      - name: authorized-keys
         image: ghcr.io/naviator/bastion
         command:
         - /bin/sh
@@ -52,12 +54,27 @@ spec:
         ports:
         - name: rsyncd
           containerPort: 1873
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 2000m
+          requests:
+            memory: 1Mi
+            cpu: 1m
         volumeMounts:
-        - name: backup
-          mountPath: /backup
+        - name: authorized-keys
+          mountPath: /authorized-keys
         - name: storage-rsync
           mountPath: /rsync
           readOnly: true
+      - name: main
+        image: ghcr.io/naviator/bastion
+        ports:
+        - name: ssh
+          containerPort: 2222
+        volumeMounts:
+        - name: backup
+          mountPath: /backup
         resources:
           limits:
             memory: 1Gi
@@ -66,14 +83,16 @@ spec:
             memory: 1Mi
             cpu: 1m
       volumes:
-      - name: backup
-        persistentVolumeClaim:
-          claimName: storage-pvc
+      - name: authorized-keys
+        emptyDir: {}
       - name: storage-rsync
         configMap:
           name: storage-rsync
           optional: false
           defaultMode: 0744
+      - name: backup
+        persistentVolumeClaim:
+          claimName: storage-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -86,6 +105,9 @@ spec:
   - port: 873
     targetPort: rsyncd
     name: rsyncd
+  - port: 7777
+    targetPort: borg
+    name: borg
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -105,3 +127,5 @@ spec:
     ports:
     - protocol: TCP
       port: 873
+    - protocol: TCP
+      port: 7777
