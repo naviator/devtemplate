@@ -3,7 +3,7 @@
 kubectl apply -k common
 kubectl wait --for=condition=available --timeout=60s deployment bastion
 EXPECTED=$(date)
-ssh -F .ssh/config bastion-host "echo -n ${EXPECTED} > /tmp/somedata"
+ssh -F .ssh/config bastion-host "echo -n \"${EXPECTED}\" > /tmp/somedata"
 FOUND=$(kubectl exec deployment/bastion -- sh -c "cat /tmp/somedata")
 
 if [ "$EXPECTED" != "$FOUND" ]; then
@@ -12,8 +12,9 @@ if [ "$EXPECTED" != "$FOUND" ]; then
 fi
 
 kubectl apply -k develop
+sleep 1
 kubectl wait --for=condition=available --timeout=60s deployment develop
-ssh -F .ssh/config develop.default "echo -n ${EXPECTED} > /tmp/somedata"
+ssh -F .ssh/config develop.default "echo -n \"${EXPECTED}\" > /tmp/somedata"
 FOUND=$(kubectl exec deployment/develop -c main -- sh -c "cat /tmp/somedata")
 
 if [ "$EXPECTED" != "$FOUND" ]; then
