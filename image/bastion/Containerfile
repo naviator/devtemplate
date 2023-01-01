@@ -13,7 +13,7 @@ RUN apk add --update --no-cache \
     # more useful than sh
     bash \
     # backup with versioning
-    borgbackup
+    borgbackup socat
 
 ENV USER=dev UID=3000
 
