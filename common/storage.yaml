@@ -1,22 +1,5 @@
 ---
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: storage-rsync
-data:
-  rsyncd.conf: |
-    port = 1873
-    use chroot = false
-
-    [backup]
-    path = /authorized
-    comment = AUTHORIZED SSH KEYS HERE
-    read only = false
-    write only = trye
-    refuse options = delete
-    timeout = 10
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: storage-pvc
@@ -45,33 +28,16 @@ spec:
     spec:
       terminationGracePeriodSeconds: 1
       containers:
-      - name: authorized-keys
+      - name: main
         image: ghcr.io/naviator/bastion
         command:
         - /bin/sh
         - -c
-        - rsync --daemon --no-detach --config=/rsync/rsyncd.conf --log-file=/dev/stdout
+        args:
+        - socat TCP-LISTEN:7777,fork EXEC:"borg serve --restrict-to-path /backup"
         ports:
-        - name: rsyncd
-          containerPort: 1873
-        resources:
-          limits:
-            memory: 1Gi
-            cpu: 2000m
-          requests:
-            memory: 1Mi
-            cpu: 1m
-        volumeMounts:
-        - name: authorized-keys
-          mountPath: /authorized-keys
-        - name: storage-rsync
-          mountPath: /rsync
-          readOnly: true
-      - name: main
-        image: ghcr.io/naviator/bastion
-        ports:
-        - name: ssh
-          containerPort: 2222
+        - name: borg
+          containerPort: 7777
         volumeMounts:
         - name: backup
           mountPath: /backup
@@ -83,13 +49,6 @@ spec:
             memory: 1Mi
             cpu: 1m
       volumes:
-      - name: authorized-keys
-        emptyDir: {}
-      - name: storage-rsync
-        configMap:
-          name: storage-rsync
-          optional: false
-          defaultMode: 0744
       - name: backup
         persistentVolumeClaim:
           claimName: storage-pvc
@@ -102,9 +61,6 @@ spec:
   selector:
     devtemplate.naviator.github.io/role: storage
   ports:
-  - port: 873
-    targetPort: rsyncd
-    name: rsyncd
   - port: 7777
     targetPort: borg
     name: borg
@@ -125,7 +81,5 @@ spec:
         matchLabels:
           devtemplate.naviator.github.io/role: develop
     ports:
-    - protocol: TCP
-      port: 873
     - protocol: TCP
       port: 7777

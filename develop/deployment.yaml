@@ -18,7 +18,7 @@ spec:
         app: develop
         devtemplate.naviator.github.io/role: develop
       annotations:
-        devtemplate.naviator.github.io/backup-paths: "/data:/workspace"
+        devtemplate.naviator.github.io/backup-paths: "/data /workspace"
         devtemplate.naviator.github.io/backup-delay: "10m"
         devtemplate.naviator.github.io/backup-interval: "5m"
     spec:
@@ -40,28 +40,41 @@ spec:
             fieldRef:
               fieldPath: metadata.labels['app']
         - name: BACKUP_REMOTE
-          value: "storage::backup/$(POD_NAMESPACE)/$(APP_NAME)"
+          value: "backup/$(POD_NAMESPACE)/$(APP_NAME)"
         - name: BACKUP_PATHS
           valueFrom:
             fieldRef:
               fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-paths']
         command:
-        - /bin/bash
+        - /bin/sh
         - -c
         args:
         - |
+          set -eux
+
           echo $(id -u):$(id -g) > /tmp/.runas;
 
-          IFS=':' read -ra BACKUP_ARRAY <<< "$BACKUP_PATHS"
-          for FOLDER in "${BACKUP_ARRAY[@]}"; do
-            echo "Backup ${FOLDER}"
-            rsync -rlptD --delete --timeout=2 ${BACKUP_REMOTE}${FOLDER}/ ${FOLDER}/ || true
-          done
+          export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes"
+          export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
+          export BORG_RSH="sh -c 'exec socat STDIO TCP:storage:7777,connect-timeout=10'"
+          export BORG_BASE_DIR="/tmp/borg"
 
-          if [ ! "$(ls -A /data)" ]; then
-            echo "Empty home dir, creating from template..."
-            rsync -rLvh -v /usr/home/ /data/
+          LAST_BACKUP=$(borg list | cut -d' ' -f1 | tail -n 1)
+          if [ ! -z ${LAST_BACKUP} ]; then
+            borg extract ${BORG_REPO}::${LAST_BACKUP} --list || true
+          else
+            echo "Nothing to restore: no backups available"
           fi
+
+          echo "Restoring default volumes"
+          for P in ${BACKUP_PATHS}; do
+            if [ \( -z "$(ls -A ${P})" \) -a \( -d /default-volume/${P} \) ]; then
+              echo "Constructing default ${P}"
+              rsync -rLvh -v /default-volume/${P}/ ${P}
+            else
+              echo "${P} not empty or /default-volume/${P} missing, skipping..."
+            fi
+          done
 
           echo "Init done...";
         volumeMounts:
@@ -72,17 +85,13 @@ spec:
           subPathExpr: workspace
           mountPath: /workspace
         - name: user-home
-          mountPath: /usr/home
+          mountPath: /default-volume/data
         - name: tmp
           mountPath: /tmp
       containers:
       - name: backup
         image: ghcr.io/naviator/bastion
         env:
-        - name: BACKUP_PATHS
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-paths']
         - name: BACKUP_INTERVAL
           valueFrom:
             fieldRef:
@@ -100,7 +109,11 @@ spec:
             fieldRef:
               fieldPath: metadata.labels['app']
         - name: BACKUP_REMOTE
-          value: "storage::backup/$(POD_NAMESPACE)/$(APP_NAME)"
+          value: "backup/$(POD_NAMESPACE)/$(APP_NAME)"
+        - name: BACKUP_PATHS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-paths']
         resources:
           requests:
             memory: 20Mi
@@ -116,19 +129,38 @@ spec:
           subPathExpr: workspace
           mountPath: /workspace
         command:
-        - /bin/bash
+        - /bin/sh
         - -c
         args:
         - |
-          IFS=':' read -ra BACKUP_ARRAY <<< "$BACKUP_PATHS"
+          set -eux
+
           sleep ${BACKUP_DELAY}
+
+          export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes"
+          export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
+          export BORG_RSH="sh -c 'exec socat STDIO TCP:storage:7777'"
+          export BORG_BASE_DIR="/tmp/borg"
+
           while true; do
-            echo "Backup start $(date)"
-            for FOLDER in "${BACKUP_ARRAY[@]}"; do
-              echo "Backup ${FOLDER}"
-              rsync -rlptD --delete --mkpath ${FOLDER}/ ${BACKUP_REMOTE}${FOLDER} || exit 1
-            done
-            echo "Backup complete $(date)"
+
+            export DATE=$(date +%F_%H:%M:%S)
+
+            borg init \
+            --encryption=none \
+            --make-parent-dirs || true
+
+            borg create \
+            --stats \
+            ssh://borgserver/${BACKUP_REMOTE}::${DATE}-$(hostname) \
+            ${BACKUP_PATHS} || true
+
+            borg prune \
+            --save-space \
+            --keep-within=1H \
+            --keep-daily=5 \
+            --keep-monthly=6 || true
+
             sleep ${BACKUP_INTERVAL}
           done
       - name: gate
@@ -166,12 +198,12 @@ spec:
           subPathExpr: workspace
           mountPath: /workspace
         resources:
+          limits:
+            memory: 200Mi
+            cpu: 2000m
           requests:
             memory: 1Mi
             cpu: 1m
-          limits:
-            memory: 1Gi
-            cpu: 2000m
         securityContext:
           runAsUser: 0
           # TODO reduce privileged to required nsenter capabilites
@@ -220,12 +252,12 @@ spec:
         - name: devscripts
           mountPath: /devscripts
         resources:
-          requests:
-            cpu: 1m
-            memory: 10Mi
           limits:
             cpu: 6000m
             memory: 8Gi
+          requests:
+            cpu: 10m
+            memory: 100Mi
       serviceAccountName: dev
       terminationGracePeriodSeconds: 1
       volumes:
