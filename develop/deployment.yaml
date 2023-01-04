@@ -20,7 +20,7 @@ spec:
       annotations:
         devtemplate.naviator.github.io/backup-delay: "10s"
         devtemplate.naviator.github.io/backup-interval: "5m"
-        devtemplate.naviator.github.io/backup-borg: "storage"
+        devtemplate.naviator.github.io/backup-borg: "storage:7777"
     spec:
       shareProcessNamespace: true
       securityContext:
@@ -64,7 +64,7 @@ spec:
 
           export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes"
           export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
-          export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG}:7777,connect-timeout=10'"
+          export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG},connect-timeout=10'"
           export BORG_BASE_DIR="/tmp/borg"
 
           LAST_BACKUP=$(borg list | cut -d' ' -f1 | tail -n 1)
@@ -125,7 +125,7 @@ spec:
 
           export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes"
           export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
-          export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG}:7777'"
+          export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG},connect-timeout=10'"
           export BORG_BASE_DIR="/tmp/borg"
 
           while true; do
