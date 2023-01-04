@@ -1,0 +1,23 @@
+FROM alpine
+
+RUN apk add --update --no-cache \
+    # backup with versioning
+    borgbackup socat
+
+# no need for motto of the day
+RUN rm /etc/motd
+
+ENV BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes" \
+    BORG_BASE_DIR="/tmp/borg" \
+    # define USERNAME avoiding KeyError: 'getpwuid(): uid not found: ...' getpass.py: getuser()
+    USERNAME="backup"
+
+EXPOSE 7777/tcp
+VOLUME [ "/backup" ]
+
+# nobody
+USER 65534
+
+ENTRYPOINT [ "/bin/sh", "-c" ]
+
+CMD [ "socat TCP-LISTEN:7777,fork EXEC:'borg serve --restrict-to-path /backup'" ]

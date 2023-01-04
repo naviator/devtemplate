@@ -29,7 +29,7 @@ spec:
         fsGroup: 1000
       initContainers:
       - name: init-uid
-        image: ghcr.io/naviator/bastion
+        image: ghcr.io/naviator/backup
         command:
         - /bin/sh
         - -c
@@ -62,10 +62,8 @@ spec:
         - |
           set -eux
 
-          export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes"
           export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
           export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG},connect-timeout=10'"
-          export BORG_BASE_DIR="/tmp/borg"
 
           LAST_BACKUP=$(borg list | cut -d' ' -f1 | tail -n 1)
           if [ ! -z ${LAST_BACKUP} ]; then
@@ -80,7 +78,7 @@ spec:
           mountPath: /persistent
       containers:
       - name: backup
-        image: ghcr.io/naviator/bastion
+        image: ghcr.io/naviator/backup
         env:
         - name: BACKUP_INTERVAL
           valueFrom:
@@ -123,10 +121,8 @@ spec:
 
           sleep ${BACKUP_DELAY}
 
-          export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes"
           export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
           export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG},connect-timeout=10'"
-          export BORG_BASE_DIR="/tmp/borg"
 
           while true; do
 
