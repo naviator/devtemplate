@@ -71,16 +71,6 @@ spec:
             echo "Nothing to restore: no backups available"
           fi
 
-          echo "Restoring default volumes"
-          for P in ${BACKUP_PATHS}; do
-            if [ \( -z "$(ls -A ${P})" \) -a \( -d /default-volume/${P} \) ]; then
-              echo "Constructing default ${P}"
-              rsync -rLvh -v /default-volume/${P}/ ${P}
-            else
-              echo "${P} not empty or /default-volume/${P} missing, skipping..."
-            fi
-          done
-
           echo "Init done...";
         volumeMounts:
         - name: data
@@ -89,8 +79,6 @@ spec:
         - name: data
           subPathExpr: workspace
           mountPath: /workspace
-        - name: user-home
-          mountPath: /default-volume/data
         - name: tmp
           mountPath: /tmp
       containers:
@@ -260,6 +248,8 @@ spec:
           mountPath: /tmp
         - name: devscripts
           mountPath: /devscripts
+        - name: user-home
+          mountPath: /default-volume/data
         resources:
           limits:
             cpu: 6000m
