@@ -14,7 +14,7 @@ if [ -d ${DEFAULT_VOLUME} ]; then
         TARGET_PATH="/${ENTRY}"
         if [ -z "$(ls -A ${TARGET_PATH})" ]; then
             echo "Constructing default ${TARGET_PATH}"
-            cp -R ${DEFAULT_VOLUME}/${ENTRY} ${TARGET_PATH}
+            cp -R ${DEFAULT_VOLUME}/${ENTRY}/. ${TARGET_PATH}
             if [ "${DEV_UID}" -ne $(id -u) ]; then
                 chown -R ${DEV_UID}:${DEV_GID} ${TARGET_PATH}
             fi
