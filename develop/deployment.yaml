@@ -20,7 +20,7 @@ spec:
       annotations:
         devtemplate.naviator.github.io/backup-delay: "10s"
         devtemplate.naviator.github.io/backup-interval: "5m"
-        devtemplate.naviator.github.io/backup-borg: "storage:7777"
+        devtemplate.naviator.github.io/backup-borg-service: "storage:7777"
     spec:
       shareProcessNamespace: true
       securityContext:
@@ -39,7 +39,7 @@ spec:
         - name: tmp
           mountPath: /tmp
       - name: init-backup
-        image: ghcr.io/naviator/bastion
+        image: ghcr.io/naviator/backup
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -51,28 +51,14 @@ spec:
               fieldPath: metadata.labels['app']
         - name: BACKUP_REMOTE
           value: "backup/$(POD_NAMESPACE)/$(APP_NAME)"
-        - name: BACKUP_BORG
+        - name: BACKUP_BORG_SERVICE
           valueFrom:
             fieldRef:
-              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-borg']
+              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-borg-service']
         command:
         - /bin/sh
-        - -c
         args:
-        - |
-          set -eux
-
-          export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
-          export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG},connect-timeout=10'"
-
-          LAST_BACKUP=$(borg list | cut -d' ' -f1 | tail -n 1)
-          if [ ! -z ${LAST_BACKUP} ]; then
-            borg extract ${BORG_REPO}::${LAST_BACKUP} || true
-          else
-            echo "Nothing to restore: no backups available"
-          fi
-
-          echo "Init done...";
+        - /opt/backup/extract.sh
         volumeMounts:
         - name: data
           mountPath: /persistent
@@ -88,10 +74,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-delay']
-        - name: BACKUP_BORG
+        - name: BACKUP_BORG_SERVICE
           valueFrom:
             fieldRef:
-              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-borg']
+              fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-borg-service']
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
@@ -120,29 +106,8 @@ spec:
           set -eux
 
           sleep ${BACKUP_DELAY}
-
-          export BORG_REPO="ssh://borgserver/${BACKUP_REMOTE}"
-          export BORG_RSH="sh -c 'exec socat STDIO TCP:${BACKUP_BORG},connect-timeout=10'"
-
           while true; do
-
-            export DATE=$(date +%F_%H:%M:%S)
-
-            borg init \
-            --encryption=none \
-            --make-parent-dirs || true
-
-            borg create \
-            --stats \
-            ssh://borgserver/${BACKUP_REMOTE}::${DATE}-$(hostname) \
-            /persistent || true
-
-            borg prune \
-            --save-space \
-            --keep-within=1H \
-            --keep-daily=5 \
-            --keep-monthly=6 || true
-
+            sh /opt/backup/create.sh
             sleep ${BACKUP_INTERVAL}
           done
       - name: gate
