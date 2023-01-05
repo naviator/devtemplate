@@ -1,8 +1,8 @@
 name: GitHub Actions Demo
 on: [push]
 jobs:
-  build:
-    name: Build
+  build-bastion:
+    name: Build Bastion
     runs-on: ubuntu-latest
     steps:
     - name: Set up QEMU
@@ -19,17 +19,6 @@ jobs:
         tags: latest ${{ github.sha }}
         containerfiles: |
           ./image/bastion/Containerfile
-    - name: Build Backup Image
-      uses: redhat-actions/buildah-build@v2
-      id: build-image-backup
-      with:
-        image: ghcr.io/${{ github.actor }}/backup
-        context: ./image/backup/
-        platforms: linux/amd64, linux/arm, linux/arm64
-        tags: latest ${{ github.sha }}
-        containerfiles: |
-          ./image/backup/Containerfile
-
     # Podman Login action (https://github.com/redhat-actions/podman-login) also be used to log in,
     # in which case 'username' and 'password' can be omitted.
     - name: Push Bastion Image
@@ -41,6 +30,28 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Print image url
+      run: |
+        echo "Image pushed to ${{ steps.push-image-bastion.outputs.registry-paths }}"
+
+  build-backup:
+    name: Build Backup
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build Backup Image
+      uses: redhat-actions/buildah-build@v2
+      id: build-image-backup
+      with:
+        image: ghcr.io/${{ github.actor }}/backup
+        context: ./image/backup/
+        platforms: linux/amd64, linux/arm, linux/arm64
+        tags: latest ${{ github.sha }}
+        containerfiles: |
+          ./image/backup/Containerfile
     - name: Push Backup Image
       id: push-image-backup
       uses: redhat-actions/push-to-registry@v2.6
@@ -53,13 +64,12 @@ jobs:
 
     - name: Print image url
       run: |
-        echo "Bastion image pushed to ${{ steps.push-image-bastion.outputs.registry-paths }}"
-        echo "Backup image pushed to ${{ steps.push-image-backup.outputs.registry-paths }}"
+        echo "Image pushed to ${{ steps.push-image-backup.outputs.registry-paths }}"
 
   test-k8s:
     name: Test K8s - kind cluster
     runs-on: [ubuntu-latest]
-    needs: [build]
+    needs: [build-bastion, build-backup]
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-go@v1
