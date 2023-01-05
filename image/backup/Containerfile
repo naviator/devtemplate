@@ -12,6 +12,10 @@ ENV BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="yes" \
     # define USERNAME avoiding KeyError: 'getpwuid(): uid not found: ...' getpass.py: getuser()
     USERNAME="backup"
 
+RUN mkdir -p /opt/backup
+
+COPY create.sh extract.sh /opt/backup/
+
 EXPOSE 7777/tcp
 VOLUME [ "/backup" ]
 
