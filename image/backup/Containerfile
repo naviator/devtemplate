@@ -2,7 +2,9 @@ FROM alpine
 
 RUN apk add --update --no-cache \
     # backup with versioning
-    borgbackup socat
+    borgbackup socat \
+    # snapshot
+    btrfs-progs sudo
 
 # no need for motto of the day
 RUN rm /etc/motd
