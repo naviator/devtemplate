@@ -16,7 +16,7 @@ borg init \
 borg create \
 --stats \
 ssh://borg-service/${BACKUP_REMOTE}::${TIMESTAMP}-$(hostname) \
-/persistent || true
+. || true
 
 borg prune \
 --save-space \
