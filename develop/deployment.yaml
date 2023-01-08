@@ -108,7 +108,7 @@ spec:
         - -c
         args:
         - 
-          sh /devscripts/provisioning.sh user sudo &&
+          sh /devscripts/provisioning.sh sudo &&
           sh /devscripts/entrypoint.sh
         securityContext:
           runAsUser: 0

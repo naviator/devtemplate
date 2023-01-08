@@ -41,46 +41,25 @@ install () {
 }
 
 ########
-# USER #
-########
-user () {
-
-    if [ ${DEV_UID} -eq 0 ]; then
-        echo "Running as root"
-        exit 0
-    fi
-
-    DEV_USERNAME=dev
-
-    if id -n ${DEV_UID} >/dev/null 2>&1; then
-        echo 'user uid already exists'
-        exit 0
-    fi
-
-    if grep -q ${DEV_GID} /etc/group; then
-        echo 'group exists'
-        groupdel ${DEV_GID}
-    fi
-
-    # Create non-root user for development purposes
-    groupadd --gid ${DEV_GID} dev \
-        && useradd --uid ${DEV_UID} --gid ${DEV_GID} -m dev --home /data
-}
-########
 # SUDO #
 ########
 
 sudo() {
     if grep -q wheel /etc/group; then
-        echo 'group wheel exists, adding user'
-        if command -v usermod; then
-            usermod -a -G wheel ${DEV_UID}
-        elif command -v addgroup; then
-            addgroup ${DEV_UID} wheel
-        fi
+        echo "Group wheel exists, adding user if it exists"
+        if id -n ${DEV_UID} >/dev/null 2>&1; then
+            echo "User with UID ${DEV_UID} exists"
+            if command -v usermod; then
+                usermod -a -G wheel $(id -nu ${DEV_UID})
+            elif command -v addgroup; then
+                addgroup $(id -nu ${DEV_UID}) wheel
+            fi
 
-        if [ -d /etc/sudoers.d ]; then
-            echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
+            if [ -d /etc/sudoers.d ]; then
+                echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
+            fi
+        else
+            echo "User ${DEV_UID} does not exist"
         fi
     fi
 }
