@@ -6,6 +6,7 @@ metadata:
   labels:
     app: develop
 spec:
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -208,7 +209,7 @@ spec:
             cpu: 10m
             memory: 100Mi
       serviceAccountName: dev
-      terminationGracePeriodSeconds: 1
+      terminationGracePeriodSeconds: 5
       volumes:
       - name: devscripts
         configMap:
