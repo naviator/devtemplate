@@ -1,0 +1,30 @@
+resources:
+- "../../develop/"
+commonLabels:
+  app: rust-prototype
+patches:
+- target:
+    name: develop
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: rust-prototype
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: develop
+  spec:
+    template:
+      spec:
+        containers:
+        - name: main
+          image: quay.io/instrumentisto/rust:1.66.0-buster
+          env:
+          - name: INSTALL_PACKAGES
+            value: "git less zsh"
+          - name: CHECKOUT_PROJECT
+            value: "https://github.com/hyperium/tonic"
+          - name: PROJECT_DIR
+            value: "~/src/rust-go"
