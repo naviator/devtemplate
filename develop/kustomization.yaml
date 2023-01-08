@@ -5,3 +5,6 @@ patches:
 - path: backup/borg.yaml
   target:
     annotationSelector: "devtemplate.naviator.github.io/backup=borg"
+- path: backup/borg-btrfs.yaml
+  target:
+    annotationSelector: "devtemplate.naviator.github.io/backup-snapshot=btrfs"

@@ -24,3 +24,7 @@ metadata:
     devtemplate.naviator.github.io/backup-interval: "5m"
     devtemplate.naviator.github.io/backup-borg-service: "storage:7777"
 ```
+
+### Snapshot
+
+Creating snapshot is enabled with `backup-snapshot: "btrfs"` (default).

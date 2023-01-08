@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: develop
+spec:
+  template:
+    metadata:
+      annotations:
+        devtemplate.naviator.github.io/backup-borg-snapshot: "btrfs"
+    spec:
+      initContainers:
+      - name: init-backup
+        env:
+        - name: DATA_MAX_SIZE
+          value: "5G"
+        - name: LOOP_MOUNT
+          value: /data/btrfs
+        - name: SUBVOLUME_PATH
+          value: "$(LOOP_MOUNT)/volume"
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          set -eux
+
+          IMG_PATH=/data/mount.img
+
+          echo "Mounting btrfs"
+          if [ ! -f ${IMG_PATH} ]; then
+            mkdir -p $(dirname ${IMG_PATH})
+            truncate -s ${DATA_MAX_SIZE} ${IMG_PATH}
+            mkfs.btrfs ${IMG_PATH}
+          fi
+
+          mkdir -p ${LOOP_MOUNT}
+
+          if [ ! $(mountpoint -q ${LOOP_MOUNT}) ]; then  
+            mount -o compress=zstd:3 ${IMG_PATH} ${LOOP_MOUNT}
+          fi
+
+          if [ ! -d ${SUBVOLUME_PATH} ]; then
+            btrfs subvolume create ${SUBVOLUME_PATH}
+            mkdir -p /data/volume
+            mount --bind ${SUBVOLUME_PATH} /data/volume
+          fi
+
+          cd ${SUBVOLUME_PATH}
+          sh /opt/backup/extract.sh
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+          - mountPath: /data
+            name: data
+            mountPropagation: Bidirectional
+      containers:
+      - name: main
+        volumeMounts:
+        - mountPath: /data
+          subPath: volume
+          name: data
+      - name: backup
+        env:
+        - name: LOOP_MOUNT
+          value: /data/btrfs
+        - name: SUBVOLUME_PATH
+          value: $(LOOP_MOUNT)/volume
+        - name: SNAPSHOT_PATH
+          value: $(LOOP_MOUNT)/snapshot
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - umount -la -t btrfs /data
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          set -eux
+
+          sleep ${BACKUP_DELAY}
+          while true; do
+
+            cd ${LOOP_MOUNT}
+
+            if [ -d ${SNAPSHOT_PATH} ]; then
+              btrfs subvolume delete ${SNAPSHOT_PATH}
+            fi
+            btrfs subvolume snapshot ${SUBVOLUME_PATH} ${SNAPSHOT_PATH}
+            cd ${SNAPSHOT_PATH}
+            
+            sh /opt/backup/create.sh
+
+            sleep ${BACKUP_INTERVAL}
+          done
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+        - mountPath: /data
+          name: data
+          # needs to be Bidirectional to unmount
+          mountPropagation: Bidirectional

@@ -7,6 +7,7 @@ metadata:
     app: develop
   annotations:
     devtemplate.naviator.github.io/backup: "borg"
+    devtemplate.naviator.github.io/backup-snapshot: "btrfs"
 spec:
   replicas: 1
   strategy:
