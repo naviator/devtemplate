@@ -79,11 +79,14 @@ spec:
               fieldPath: metadata.annotations['devtemplate.naviator.github.io/backup-borg-service']
         command:
         - /bin/sh
+        - -c
         args:
-        - /opt/backup/extract.sh
+        - |
+          cd /data
+          sh /opt/backup/extract.sh
         volumeMounts:
         - name: data
-          mountPath: /persistent
+          mountPath: /data
       containers:
       - name: main
         image: ghcr.io/naviator/bastion
@@ -118,11 +121,7 @@ spec:
           periodSeconds: 10
         volumeMounts:
         - name: data
-          subPathExpr: home
           mountPath: /data
-        - name: data
-          subPathExpr: workspace
-          mountPath: /workspace
         - name: tmp
           mountPath: /tmp
         - name: devscripts
@@ -170,7 +169,7 @@ spec:
             cpu: 2000m
         volumeMounts:
         - name: data
-          mountPath: /persistent
+          mountPath: /data
         command:
         - /bin/sh
         - -c
@@ -180,6 +179,7 @@ spec:
 
           sleep ${BACKUP_DELAY}
           while true; do
+            cd /data
             sh /opt/backup/create.sh
             sleep ${BACKUP_INTERVAL}
           done
@@ -212,11 +212,7 @@ spec:
           subPath: visit_target.sh
           mountPath: /etc/profile
         - name: data
-          subPathExpr: home
           mountPath: /data
-        - name: data
-          subPathExpr: workspace
-          mountPath: /workspace
         resources:
           limits:
             memory: 200Mi
