@@ -28,7 +28,27 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      serviceAccountName: dev
+      terminationGracePeriodSeconds: 5
+      volumes:
+      - name: devscripts
+        configMap:
+          name: devscripts
+          defaultMode: 0755
+      - name:  visit-target
+        configMap:
+          name: visit-target
+          defaultMode: 0755
+      - name: data
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: user-home
+        configMap:
+          name: user-home
+          defaultMode: 0600
       initContainers:
+      # store desired UID:GID for pod
       - name: init-uid
         image: ghcr.io/naviator/backup
         command:
@@ -39,6 +59,7 @@ spec:
         volumeMounts:
         - name: tmp
           mountPath: /tmp
+      # restore BACKUP
       - name: init-backup
         image: ghcr.io/naviator/backup
         env:
@@ -64,6 +85,52 @@ spec:
         - name: data
           mountPath: /persistent
       containers:
+      - name: main
+        image: ghcr.io/naviator/bastion
+        stdin: true
+        tty: true
+        env:
+        - name: APP_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['app']
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - 
+          sh /devscripts/provisioning.sh &&
+          sh /devscripts/entrypoint.sh
+        securityContext:
+          runAsUser: 0
+        startupProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/.pid
+          failureThreshold: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: data
+          subPathExpr: home
+          mountPath: /data
+        - name: data
+          subPathExpr: workspace
+          mountPath: /workspace
+        - name: tmp
+          mountPath: /tmp
+        - name: devscripts
+          mountPath: /devscripts
+        - name: user-home
+          mountPath: /default-volume/data
+        resources:
+          limits:
+            cpu: 6000m
+            memory: 8Gi
+          requests:
+            cpu: 10m
+            memory: 100Mi
       - name: backup
         image: ghcr.io/naviator/backup
         env:
@@ -162,68 +229,3 @@ spec:
           failureThreshold: 30
           periodSeconds: 10
           initialDelaySeconds: 3
-      - name: main
-        image: ghcr.io/naviator/bastion
-        stdin: true
-        tty: true
-        env:
-        - name: APP_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.labels['app']
-        command:
-        - /bin/sh
-        - -c
-        args:
-        - 
-          sh /devscripts/provisioning.sh &&
-          sh /devscripts/entrypoint.sh
-        securityContext:
-          runAsUser: 0
-        startupProbe:
-          exec:
-            command:
-            - cat
-            - /tmp/.pid
-          failureThreshold: 30
-          periodSeconds: 10
-        volumeMounts:
-        - name: data
-          subPathExpr: home
-          mountPath: /data
-        - name: data
-          subPathExpr: workspace
-          mountPath: /workspace
-        - name: tmp
-          mountPath: /tmp
-        - name: devscripts
-          mountPath: /devscripts
-        - name: user-home
-          mountPath: /default-volume/data
-        resources:
-          limits:
-            cpu: 6000m
-            memory: 8Gi
-          requests:
-            cpu: 10m
-            memory: 100Mi
-      serviceAccountName: dev
-      terminationGracePeriodSeconds: 5
-      volumes:
-      - name: devscripts
-        configMap:
-          name: devscripts
-          defaultMode: 0755
-      - name:  visit-target
-        configMap:
-          name: visit-target
-          defaultMode: 0755
-      - name: data
-        emptyDir: {}
-      - name: tmp
-        emptyDir: {}
-      - name: user-home
-        configMap:
-          name: user-home
-          defaultMode: 0600
