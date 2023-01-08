@@ -186,10 +186,6 @@ spec:
       - name: gate
         image: ghcr.io/naviator/bastion
         env:
-        - name: HOME
-          value: "/root"
-        - name: USER
-          value: "root"
         - name: TARGET_SHELL
           value: zsh
         - name: SSH_AUTHORIZED_KEYS
@@ -211,8 +207,6 @@ spec:
         - name: visit-target
           subPath: visit_target.sh
           mountPath: /etc/profile
-        - name: data
-          mountPath: /data
         resources:
           limits:
             memory: 200Mi
@@ -222,8 +216,10 @@ spec:
             cpu: 1m
         securityContext:
           runAsUser: 0
-          # TODO reduce privileged to required nsenter capabilites
-          privileged: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            - SYS_PTRACE
         startupProbe:
           tcpSocket:
             port: ssh
