@@ -16,11 +16,11 @@ Some ways to use locally built images:
 
 ## Backup
 
-Backup of volumes is provided through a sidecar. Backup targets `folders` specified in annotation (escaped and space separated). After `delay`, folders are backed up every `interval`. Restore happens in `initContainer`. Time values must be `sleep` command compatible. Backup also supports versioning. Example:
+Backup of volumes is provided through a sidecar. After `delay`, `data` volume is backed up every `interval`. Restore happens in `initContainer`. Time values must be `sleep` command compatible. Backup also supports versioning. Example:
 ```
 metadata:
   annotations:
-    devtemplate.naviator.github.io/backup-folders: "/data /workspace"
     devtemplate.naviator.github.io/backup-delay: "10m"
     devtemplate.naviator.github.io/backup-interval: "5m"
+    devtemplate.naviator.github.io/backup-borg-service: "storage:7777"
 ```
