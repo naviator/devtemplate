@@ -1,3 +1,7 @@
 resources:
 - deployment.yaml
 - service.yaml
+patches:
+- path: backup/borg.yaml
+  target:
+    annotationSelector: "devtemplate.naviator.github.io/backup=borg"
