@@ -89,6 +89,11 @@ spec:
         image: ghcr.io/naviator/bastion
         stdin: true
         tty: true
+        lifecycle:
+          postStart:
+            exec:
+              # installation usually does not have to be blocking
+              command: ["/bin/sh", "-c", "sh /devscripts/provisioning.sh install"]
         env:
         - name: APP_NAME
           valueFrom:
@@ -100,7 +105,7 @@ spec:
         - -c
         args:
         - 
-          sh /devscripts/provisioning.sh &&
+          sh /devscripts/provisioning.sh user sudo &&
           sh /devscripts/entrypoint.sh
         securityContext:
           runAsUser: 0

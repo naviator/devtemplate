@@ -2,6 +2,10 @@
 
 set -eux
 
+##############
+# PRIVILEGES REQUIRED
+##############
+
 if [ "${EUID:-$(id -u)}" -ne 0 ]; then
     echo "Elevating permissions..."
     if command -v sudo; then
@@ -12,61 +16,77 @@ if [ "${EUID:-$(id -u)}" -ne 0 ]; then
     fi
 fi
 
+DEV_UID=$(cat /tmp/.runas | cut -d':' -f1)
+DEV_GID=$(cat /tmp/.runas | cut -d':' -f2)
+
 ############
 # PACKAGES #
 ############
-INSTALL_PACKAGES=${INSTALL_PACKAGES:-"git less zsh"}
 
-if [ -n "${INSTALL_PACKAGES}" ]; then
-    if command -v dnf; then
-        dnf install -y ${INSTALL_PACKAGES};
-        dnf clean all;
-    elif command -v apt; then
-        apt update;
-        apt install -y ${INSTALL_PACKAGES};
-        rm -rf /var/lib/apt/lists/*;
-    elif command -v apk; then
-        apk add --no-cache ${INSTALL_PACKAGES};
+install () {
+    INSTALL_PACKAGES=${INSTALL_PACKAGES:-"git less zsh"}
+
+    if [ -n "${INSTALL_PACKAGES}" ]; then
+        if command -v dnf; then
+            dnf install -y ${INSTALL_PACKAGES};
+            dnf clean all;
+        elif command -v apt; then
+            apt update;
+            apt install -y ${INSTALL_PACKAGES};
+            rm -rf /var/lib/apt/lists/*;
+        elif command -v apk; then
+            apk add --no-cache ${INSTALL_PACKAGES};
+        fi
     fi
-fi
+}
 
 ########
 # USER #
 ########
+user () {
 
-DEV_UID=$(cat /tmp/.runas | cut -d':' -f1)
-DEV_GID=$(cat /tmp/.runas | cut -d':' -f2)
-
-if [ ${DEV_UID} -eq 0 ]; then
-    echo "Running as root"
-    exit 0
-fi
-
-DEV_USERNAME=dev
-
-if id -n ${DEV_UID} >/dev/null 2>&1; then
-    echo 'user uid already exists'
-    exit 0
-fi
-
-if grep -q ${DEV_GID} /etc/group; then
-    echo 'group exists'
-    groupdel ${DEV_GID}
-fi
-
-# Create non-root user for development purposes
-groupadd --gid ${DEV_GID} dev \
-    && useradd --uid ${DEV_UID} --gid ${DEV_GID} -m dev --home /data
-
-if grep -q wheel /etc/group; then
-    echo 'group wheel exists, adding user'
-    if command -v usermod; then
-        usermod -a -G wheel $(id -nu)
-    elif command -v addgroup; then
-        addgroup $(id -nu) wheel
+    if [ ${DEV_UID} -eq 0 ]; then
+        echo "Running as root"
+        exit 0
     fi
 
-    if [ -d /etc/sudoers.d ]; then
-        echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
+    DEV_USERNAME=dev
+
+    if id -n ${DEV_UID} >/dev/null 2>&1; then
+        echo 'user uid already exists'
+        exit 0
     fi
-fi
+
+    if grep -q ${DEV_GID} /etc/group; then
+        echo 'group exists'
+        groupdel ${DEV_GID}
+    fi
+
+    # Create non-root user for development purposes
+    groupadd --gid ${DEV_GID} dev \
+        && useradd --uid ${DEV_UID} --gid ${DEV_GID} -m dev --home /data
+}
+########
+# SUDO #
+########
+
+sudo() {
+    if grep -q wheel /etc/group; then
+        echo 'group wheel exists, adding user'
+        if command -v usermod; then
+            usermod -a -G wheel ${DEV_UID}
+        elif command -v addgroup; then
+            addgroup ${DEV_UID} wheel
+        fi
+
+        if [ -d /etc/sudoers.d ]; then
+            echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
+        fi
+    fi
+}
+
+for var in "$@"
+do
+    echo "Running $var"
+    $var
+done
