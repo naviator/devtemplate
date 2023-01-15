@@ -4,7 +4,9 @@ RUN apk add --update --no-cache \
     # backup with versioning
     borgbackup socat \
     # snapshot
-    btrfs-progs sudo
+    btrfs-progs sudo \
+    # encryption
+    cryptsetup
 
 # no need for motto of the day
 RUN rm /etc/motd
