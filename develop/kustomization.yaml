@@ -8,3 +8,6 @@ patches:
 - path: backup/borg-btrfs.yaml
   target:
     annotationSelector: "devtemplate.naviator.github.io/backup-snapshot=btrfs"
+- path: backup/borg-btrfs-encrypted.yaml
+  target:
+    annotationSelector: "devtemplate.naviator.github.io/backup-snapshot=btrfs-encrypted"

@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: develop
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: init-backup
+        env:
+        - name: POD_NAMESPACE
+        - name: APP_NAME
+        - name: DATA_MAX_SIZE
+          value: "5G"
+        - name: LOOP_MOUNT
+          value: /data/btrfs
+        - name: SUBVOLUME_PATH
+          value: "$(LOOP_MOUNT)/volume"
+        - name: KEY_PATH
+          value: "/etc/mount-vault/key"
+        - name: VAULT_PATH
+          value: "/data/vault.img"
+        - name: VAULT_DEVICE
+          value: "vault:$(POD_NAMESPACE):$(APP_NAME)"
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          set -eux
+
+          if [ $(mountpoint -q ${LOOP_MOUNT}) ]; then  
+            umount ${LOOP_MOUNT}
+          fi
+          cryptsetup close ${VAULT_DEVICE} || true
+
+          # create VAULT and mount on LOOP
+          mkdir -p $(dirname ${VAULT_PATH})
+          mkdir -p ${LOOP_MOUNT}
+        
+          set -e
+          # TODO persist key as Secret
+          # No need to load entire content after boot
+          mkdir -p $(dirname ${KEY_PATH})
+          dd if=/dev/urandom of=${KEY_PATH} bs=64 count=64
+          
+          # TODO delete vault only if key cannot decrypt
+          rm -rf $VAULT_PATH
+          truncate -s ${DATA_MAX_SIZE} ${VAULT_PATH}
+          cryptsetup --batch-mode -v --type luks2 luksFormat ${VAULT_PATH} ${KEY_PATH}
+
+          cryptsetup open --key-file ${KEY_PATH} ${VAULT_PATH} ${VAULT_DEVICE}
+          mkfs.btrfs /dev/mapper/${VAULT_DEVICE}
+          # TODO: use compress=zstd on kernel 4.14+ (optionally with level, e.g. zstd:3)
+          mount -t btrfs -o compress,user_subvol_rm_allowed /dev/mapper/${VAULT_DEVICE} ${LOOP_MOUNT}
+
+          if [ ! -d ${SUBVOLUME_PATH} ]; then
+            btrfs subvolume create ${SUBVOLUME_PATH}
+            mkdir -p /data/volume
+            mount --bind ${SUBVOLUME_PATH} /data/volume
+          fi
+
+          cd ${SUBVOLUME_PATH}
+          sh /opt/backup/extract.sh
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+          - mountPath: /data
+            name: data
+            mountPropagation: Bidirectional
+      containers:
+      - name: main
+        volumeMounts:
+        - mountPath: /data
+          subPath: volume
+          name: data
+      - name: backup
+        env:
+        - name: LOOP_MOUNT
+          value: /data/btrfs
+        - name: SUBVOLUME_PATH
+          value: $(LOOP_MOUNT)/volume
+        - name: SNAPSHOT_PATH
+          value: $(LOOP_MOUNT)/snapshot
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - umount -la -t btrfs /data
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          set -eux
+
+          sleep ${BACKUP_DELAY}
+          while true; do
+
+            cd ${LOOP_MOUNT}
+
+            if [ -d ${SNAPSHOT_PATH} ]; then
+              btrfs subvolume delete ${SNAPSHOT_PATH}
+            fi
+            btrfs subvolume snapshot ${SUBVOLUME_PATH} ${SNAPSHOT_PATH}
+            cd ${SNAPSHOT_PATH}
+            
+            sh /opt/backup/create.sh
+
+            sleep ${BACKUP_INTERVAL}
+          done
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+        - mountPath: /data
+          name: data
+          # needs to be Bidirectional to unmount
+          mountPropagation: Bidirectional
