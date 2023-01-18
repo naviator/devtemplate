@@ -4,9 +4,6 @@ metadata:
   name: develop
 spec:
   template:
-    metadata:
-      annotations:
-        devtemplate.naviator.github.io/backup-borg-snapshot: "btrfs"
     spec:
       initContainers:
       - name: init-backup
