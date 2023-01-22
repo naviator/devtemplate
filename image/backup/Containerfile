@@ -8,7 +8,7 @@ RUN apk add --update --no-cache \
     # encryption
     cryptsetup \
     # useful for Kubernetes API & other stuff
-    curl
+    curl jq
 
 # no need for motto of the day
 RUN rm /etc/motd
