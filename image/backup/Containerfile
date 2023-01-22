@@ -6,7 +6,9 @@ RUN apk add --update --no-cache \
     # snapshot
     btrfs-progs sudo \
     # encryption
-    cryptsetup
+    cryptsetup \
+    # useful for Kubernetes API & other stuff
+    curl
 
 # no need for motto of the day
 RUN rm /etc/motd
