@@ -16,52 +16,90 @@ spec:
           value: /data/btrfs
         - name: SUBVOLUME_PATH
           value: "$(LOOP_MOUNT)/volume"
-        - name: KEY_PATH
-          value: "/etc/mount-vault/key"
         - name: VAULT_PATH
           value: "/data/vault.img"
         - name: VAULT_DEVICE
-          value: "vault:$(POD_NAMESPACE):$(APP_NAME)"
+          value: "vault.$(POD_NAMESPACE).$(APP_NAME)"
         command:
         - /bin/sh
         - -c
         args:
         - |
-          set -eux
 
+          set -eu
+          
+          echo "Unmount old mount points."
           if [ $(mountpoint -q ${LOOP_MOUNT}) ]; then  
             umount ${LOOP_MOUNT}
           fi
           cryptsetup close ${VAULT_DEVICE} || true
 
-          # create VAULT and mount on LOOP
+          echo "Create mount folders."
           mkdir -p $(dirname ${VAULT_PATH})
           mkdir -p ${LOOP_MOUNT}
-        
-          set -e
-          # TODO persist key as Secret
-          # No need to load entire content after boot
-          mkdir -p $(dirname ${KEY_PATH})
-          dd if=/dev/urandom of=${KEY_PATH} bs=64 count=64
+          mkdir -p /data/volume
+
+          echo "Retrieve mount encryption key."
+          EXISTING_SECRET_VALUE=$(curl -s -XGET \
+          --header "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+          --header "Content-Type: application/json" \
+          --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+          "https://kubernetes.default/api/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/secrets/${VAULT_DEVICE}")
           
-          # TODO delete vault only if key cannot decrypt
-          rm -rf $VAULT_PATH
-          truncate -s ${DATA_MAX_SIZE} ${VAULT_PATH}
-          cryptsetup --batch-mode -v --type luks2 luksFormat ${VAULT_PATH} ${KEY_PATH}
+          if [ -n "$(echo $EXISTING_SECRET_VALUE | jq .data.key)" ]; then
+            KEY_VALUE=$(echo $EXISTING_SECRET_VALUE | jq .data.key)
+          else
+            KEY_VALUE=$(dd if=/dev/urandom bs=64 count=64 2&>/dev/null | base64 -w 0)
 
-          cryptsetup open --key-file ${KEY_PATH} ${VAULT_PATH} ${VAULT_DEVICE}
-          mkfs.btrfs /dev/mapper/${VAULT_DEVICE}
-          # TODO: use compress=zstd on kernel 4.14+ (optionally with level, e.g. zstd:3)
-          mount -t btrfs -o compress,user_subvol_rm_allowed /dev/mapper/${VAULT_DEVICE} ${LOOP_MOUNT}
-
-          if [ ! -d ${SUBVOLUME_PATH} ]; then
-            btrfs subvolume create ${SUBVOLUME_PATH}
-            mkdir -p /data/volume
-            mount --bind ${SUBVOLUME_PATH} /data/volume
+            echo -n '{"kind":"Secret","apiVersion":"v1","metadata":{"name":"'${VAULT_DEVICE}'"},"data":{"key":"'${KEY_VALUE}'"}}' | \
+            curl -XPOST \
+            --header "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+            --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+            --header "Content-Type: application/json" \
+            --data-binary @- \
+            "https://kubernetes.default/api/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/secrets?fieldManager=kubectl-create&fieldValidation=Strict"
           fi
+          
+          echo "Test available key on vault."
+          if [ ! -f ${VAULT_PATH} ] || [ ! $(echo ${KEY_VALUE} | cryptsetup luksOpen --verbose --test-passphrase --key-file - ${VAULT_PATH}) ]; then
+            
+            echo "Recreating vault."
+            rm -rf $VAULT_PATH
+            truncate -s ${DATA_MAX_SIZE} ${VAULT_PATH}
+            echo ${KEY_VALUE} | cryptsetup --batch-mode -v --type luks2 luksFormat ${VAULT_PATH} -
 
-          cd ${SUBVOLUME_PATH}
-          sh /opt/backup/extract.sh
+            echo "Mount vault."
+            echo ${KEY_VALUE} | cryptsetup open --key-file - ${VAULT_PATH} ${VAULT_DEVICE}
+
+            echo "Create new filesystem."
+            mkfs.btrfs /dev/mapper/${VAULT_DEVICE}
+
+            echo "Mount filesystem."
+            # TODO: use compress=zstd on kernel 4.14+ (optionally with level, e.g. zstd:3)
+            mount -t btrfs -o compress,user_subvol_rm_allowed /dev/mapper/${VAULT_DEVICE} ${LOOP_MOUNT}
+
+            echo "Create subvolume."
+            btrfs subvolume create ${SUBVOLUME_PATH}
+
+            echo "Mount subvolume."
+            mount --bind ${SUBVOLUME_PATH} /data/volume
+            
+            echo "Restore data"
+            cd ${SUBVOLUME_PATH} && sh /opt/backup/extract.sh
+          else
+
+            echo "Reusing vault: Mount vault."
+            echo ${KEY_VALUE} | cryptsetup open --key-file - ${VAULT_PATH} ${VAULT_DEVICE}
+
+            echo "Mount filesystem."
+            # TODO: use compress=zstd on kernel 4.14+ (optionally with level, e.g. zstd:3)
+            mount -t btrfs -o compress,user_subvol_rm_allowed /dev/mapper/${VAULT_DEVICE} ${LOOP_MOUNT}
+
+            echo "Mount subvolume."
+            mount --bind ${SUBVOLUME_PATH} /data/volume
+
+            # Expecting data already here, do not restore.
+          fi
         securityContext:
           runAsUser: 0
           privileged: true
