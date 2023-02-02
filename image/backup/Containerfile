@@ -29,11 +29,9 @@ RUN mkdir -p /opt/backup
 
 COPY create.sh extract.sh /opt/backup/
 
+USER backup
 EXPOSE 7777/tcp
 VOLUME [ "/backup" ]
-
-# nobody
-USER backup
 
 ENTRYPOINT [ "/bin/sh", "-c" ]
 
