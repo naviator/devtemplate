@@ -11,7 +11,6 @@ spec:
         devtemplate.naviator.github.io/backup-borg-service: "storage:7777"
     spec:
       initContainers:
-      - name: init-uid
       - name: init-backup
         image: ghcr.io/naviator/backup
         env:
