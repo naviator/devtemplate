@@ -13,7 +13,8 @@ RUN apk add --update --no-cache \
     # backup with versioning
     borgbackup socat
 
-ARG USER=dev UID=30001
+ARG USER=dev
+ARG UID=30001
 
 RUN echo "Adding user: ${USER} (${UID})"; \
     adduser --disabled-password --uid ${UID} --shell /bin/sh ${USER} && \

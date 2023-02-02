@@ -10,7 +10,8 @@ RUN apk add --update --no-cache \
     # useful for Kubernetes API & other stuff
     curl jq
 
-ARG USER=backup UID=30002
+ARG USER=backup
+ARG UID=30002
 
 RUN echo "Adding user: ${USER} (${UID})"; \
     adduser --disabled-password --uid ${UID} --shell /bin/sh ${USER} && \
