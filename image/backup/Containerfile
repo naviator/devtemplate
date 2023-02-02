@@ -10,6 +10,12 @@ RUN apk add --update --no-cache \
     # useful for Kubernetes API & other stuff
     curl jq
 
+ARG USER=backup UID=30002
+
+RUN echo "Adding user: ${USER} (${UID})"; \
+    adduser --disabled-password --uid ${UID} --shell /bin/sh ${USER} && \
+    sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
+
 # no need for motto of the day
 RUN rm /etc/motd
 
@@ -26,7 +32,7 @@ EXPOSE 7777/tcp
 VOLUME [ "/backup" ]
 
 # nobody
-USER 65534
+USER backup
 
 ENTRYPOINT [ "/bin/sh", "-c" ]
 
