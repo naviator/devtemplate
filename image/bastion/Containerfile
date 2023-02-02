@@ -28,7 +28,6 @@ COPY --chmod=644 sshd_config /etc/ssh/sshd_config_template
 COPY entrypoint.sh /
 
 USER dev
-
 EXPOSE 2222/tcp
 
 ENTRYPOINT [ "/entrypoint.sh" ]
