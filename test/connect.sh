@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eux
+
 kubectl apply -k common
 kubectl wait --for=condition=available --timeout=60s deployment bastion
 EXPECTED=$(date)
@@ -11,10 +13,12 @@ if [ "$EXPECTED" != "$FOUND" ]; then
     exit 1
 fi
 
+NAMESPACE=$(kubectl config view --minify | grep namespace | cut -d" " -f6)
+
 kubectl apply -k develop
 sleep 1
 kubectl wait --for=condition=available --timeout=60s deployment develop
-ssh -F .ssh/config develop.default.svc "echo -n \"${EXPECTED}\" > /tmp/somedata"
+ssh -F .ssh/config develop.${NAMESPACE}.svc "echo -n \"${EXPECTED}\" > /tmp/somedata"
 FOUND=$(kubectl exec deployment/develop -c main -- sh -c "cat /tmp/somedata")
 
 if [ "$EXPECTED" != "$FOUND" ]; then

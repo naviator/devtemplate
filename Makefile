@@ -2,8 +2,13 @@
 
 default: kubectl_common connect
 
-connect:
-	kubectl port-forward svc/bastion 2222:2222
+connect: disconnect
+	kubectl port-forward svc/bastion 2222:2222 >/dev/null &
+
+disconnect:
+	if [ $$(lsof -t -i:2222) ]; then \
+		kill $$(lsof -t -i:2222); \
+	fi
 
 common/ssh/authorized_keys:
 	if [ ! -f ~/.ssh/id_ed25519 ]; then \

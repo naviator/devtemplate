@@ -40,6 +40,7 @@ kind: Service
 metadata:
   name: bastion
 spec:
+  type: ClusterIP
   selector:
     devtemplate.naviator.github.io/role: bastion
   ports:
