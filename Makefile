@@ -37,4 +37,5 @@ down:
 test_k8s: kubectl_common
 	make connect &
 	kubectl wait deployment -l devtemplate.naviator.github.io/role=bastion --for condition=Available=True --timeout=60s || exit 1
-	sh test/connect.sh
+	sh test/connect_bastion.sh
+	sh test/connect_develop.sh
