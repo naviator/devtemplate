@@ -3,11 +3,14 @@ kind: Deployment
 metadata:
   name: develop
 spec:
+  strategy:
+    type: Recreate
   template:
     spec:
       initContainers:
       - name: init-backup
         env:
+        # use with borg - ENV variables defined there
         - name: POD_NAMESPACE
         - name: APP_NAME
         - name: DATA_MAX_SIZE
