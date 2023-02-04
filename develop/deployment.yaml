@@ -21,6 +21,11 @@ spec:
       labels:
         app: develop
         devtemplate.naviator.github.io/role: develop
+      annotations:
+        # backup config (if backup is applied)
+        devtemplate.naviator.github.io/backup-delay: "10m"
+        devtemplate.naviator.github.io/backup-interval: "5m"
+        devtemplate.naviator.github.io/backup-borg-service: "storage:7777"
     spec:
       shareProcessNamespace: true
       securityContext:
