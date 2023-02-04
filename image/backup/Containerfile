@@ -29,6 +29,11 @@ RUN mkdir -p /opt/backup
 
 COPY create.sh extract.sh /opt/backup/
 
+ENV BACKUP_DELAY="10m" \
+    BACKUP_INTERVAL="5m" \
+    BACKUP_REMOTE="/backup" \
+    BACKUP_BORG_SERVICE="storage:7777"
+
 USER backup
 EXPOSE 7777/tcp
 VOLUME [ "/backup" ]

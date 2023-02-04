@@ -2,8 +2,6 @@
 
 set -eux
 
-export BACKUP_REMOTE=${BACKUP_REMOTE:-"/backup"}
-export BACKUP_BORG_SERVICE=${BACKUP_BORG_SERVICE:-"borg-service:7777"}
 export BORG_REPO=${BORG_REPO:-"ssh://borg-service/${BACKUP_REMOTE}"}
 export BORG_RSH=${BORG_RSH:-"sh -c 'exec socat STDIO TCP:${BACKUP_BORG_SERVICE},connect-timeout=10'"}
 

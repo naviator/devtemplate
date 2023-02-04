@@ -4,11 +4,6 @@ metadata:
   name: develop
 spec:
   template:
-    metadata:
-      annotations:
-        devtemplate.naviator.github.io/backup-delay: "10m"
-        devtemplate.naviator.github.io/backup-interval: "5m"
-        devtemplate.naviator.github.io/backup-borg-service: "storage:7777"
     spec:
       initContainers:
       - name: init-backup
