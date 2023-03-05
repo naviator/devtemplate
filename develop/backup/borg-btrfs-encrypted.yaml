@@ -64,8 +64,21 @@ spec:
           fi
           
           echo "Test available key on vault."
-          if [ ! -f ${VAULT_PATH} ] || [ ! $(echo ${KEY_VALUE} | cryptsetup luksOpen --verbose --test-passphrase --key-file - ${VAULT_PATH}) ]; then
+          if [  -f ${VAULT_PATH} -a $(echo ${KEY_VALUE} | cryptsetup luksOpen --verbose --test-passphrase --key-file - ${VAULT_PATH}) ]; then
             
+            echo "Reusing vault: Mount vault."
+            echo ${KEY_VALUE} | cryptsetup open --key-file - ${VAULT_PATH} ${VAULT_DEVICE}
+
+            echo "Mount filesystem."
+            # TODO: use compress=zstd on kernel 4.14+ (optionally with level, e.g. zstd:3)
+            mount -t btrfs -o compress,user_subvol_rm_allowed /dev/mapper/${VAULT_DEVICE} ${LOOP_MOUNT}
+
+            echo "Mount subvolume."
+            mount --bind ${SUBVOLUME_PATH} /data/volume
+
+            # Expecting data already here, do not restore.
+          else
+
             echo "Recreating vault."
             rm -rf $VAULT_PATH
             truncate -s ${DATA_MAX_SIZE} ${VAULT_PATH}
@@ -89,19 +102,6 @@ spec:
             
             echo "Restore data"
             cd ${SUBVOLUME_PATH} && sh /opt/backup/extract.sh
-          else
-
-            echo "Reusing vault: Mount vault."
-            echo ${KEY_VALUE} | cryptsetup open --key-file - ${VAULT_PATH} ${VAULT_DEVICE}
-
-            echo "Mount filesystem."
-            # TODO: use compress=zstd on kernel 4.14+ (optionally with level, e.g. zstd:3)
-            mount -t btrfs -o compress,user_subvol_rm_allowed /dev/mapper/${VAULT_DEVICE} ${LOOP_MOUNT}
-
-            echo "Mount subvolume."
-            mount --bind ${SUBVOLUME_PATH} /data/volume
-
-            # Expecting data already here, do not restore.
           fi
         securityContext:
           runAsUser: 0
