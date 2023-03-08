@@ -19,7 +19,7 @@ jobs:
         tags: latest ${{ github.sha }}
         containerfiles: |
           ./image/bastion/Containerfile
-    # Podman Login action (https://github.com/redhat-actions/podman-login) also be used to log in,
+    # Podman Login action (https://github.com/redhat-actions/podman-login) can also be used to log in,
     # in which case 'username' and 'password' can be omitted.
     - name: Push Bastion Image
       id: push-image-bastion
@@ -62,9 +62,39 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+  build-develop:
+    name: Build Develop
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build Develop Image
+      uses: redhat-actions/buildah-build@v2
+      id: build-image-develop
+      with:
+        image: ghcr.io/${{ github.actor }}/develop
+        context: ./image/develop/
+        platforms: linux/amd64, linux/arm64
+        tags: latest ${{ github.sha }}
+        containerfiles: |
+          ./image/develop/Containerfile
+    - name: Push Develop Image
+      id: push-image-develop
+      uses: redhat-actions/push-to-registry@v2.6
+      with:
+        image: ${{ steps.build-image-develop.outputs.image }}
+        tags: ${{ steps.build-image-develop.outputs.tags }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Print image url
       run: |
-        echo "Image pushed to ${{ steps.push-image-backup.outputs.registry-paths }}"
+        echo "Image pushed to ${{ steps.push-image-bastion.outputs.registry-paths }}";
+        echo "Image pushed to ${{ steps.push-image-backup.outputs.registry-paths }}";
+        echo "Image pushed to ${{ steps.push-image-develop.outputs.registry-paths }}";
 
   test-k8s:
     name: Test K8s - kind cluster

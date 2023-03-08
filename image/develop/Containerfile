@@ -1,4 +1,4 @@
-FROM fedora:36
+FROM fedora:37
 
 RUN dnf install -y \
 	zsh fzf bash-completion \
@@ -6,11 +6,12 @@ RUN dnf install -y \
 	nano vim \
 	unzip jq parallel make \
 	wget curl ca-certificates \
-	procps iputils \
+	procps iputils util-linux htop \
 	gnupg2 pinentry \
-	rsync unzip
+	rsync unzip \
+	openssh-server 
 
-# GCloud SDK requires Python 3.7
+# GCloud SDK currently requires Python 3.7
 RUN dnf install -y \
 	gcc \
 	libev-devel libffi-devel virtualenv \
@@ -41,6 +42,7 @@ RUN dnf install -y \
 ENV KUBECONFIG /data/.kube/config
 
 ARG USER=dev
+# ARG requires exactly one argument definition
 ARG UID=1000
 
 RUN echo "Adding user: ${USER} (${UID})"; \
@@ -53,9 +55,6 @@ RUN cd /etc/skel && \
     git clone https://github.com/ohmyzsh/ohmyzsh.git .oh-my-zsh && \
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git .oh-my-zsh/custom/themes/powerlevel10k && \
     git clone https://github.com/zsh-users/zsh-autosuggestions .oh-my-zsh/custom/plugins/zsh-autosuggestions
-
-RUN dnf install -y \
-	openssh-server git vim zsh util-linux
 
 WORKDIR /data
 
