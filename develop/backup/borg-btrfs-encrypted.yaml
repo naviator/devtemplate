@@ -28,14 +28,17 @@ spec:
         - -c
         args:
         - |
-
           set -eu
           
-          echo "Unmount old mount points."
-          if [ $(mountpoint -q ${LOOP_MOUNT}) ]; then  
+          echo "Checking presence of old mount."
+          if mountpoint -q ${LOOP_MOUNT}; then
+            echo "Unmounting old mount."
             umount ${LOOP_MOUNT}
           fi
-          cryptsetup close ${VAULT_DEVICE} || true
+
+          if dmsetup info ${VAULT_DEVICE}; then
+            cryptsetup close ${VAULT_DEVICE}
+          fi
 
           echo "Create mount folders."
           mkdir -p $(dirname ${VAULT_PATH})
@@ -49,22 +52,29 @@ spec:
           --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
           "https://kubernetes.default/api/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/secrets/${VAULT_DEVICE}")
           
-          if [ -n "$(echo $EXISTING_SECRET_VALUE | jq .data.key)" ]; then
-            KEY_VALUE=$(echo $EXISTING_SECRET_VALUE | jq .data.key)
-          else
+          KEY_VALUE=$(echo $EXISTING_SECRET_VALUE | jq '.data.key // empty')
+
+          # true if a bash variable is unset or set to the empty string
+          if [ -z "$KEY_VALUE" ]; then
+            
+            echo "Generating KEY_VALUE"
+
             KEY_VALUE=$(dd if=/dev/urandom bs=64 count=64 2&>/dev/null | base64 -w 0)
 
             echo -n '{"kind":"Secret","apiVersion":"v1","metadata":{"name":"'${VAULT_DEVICE}'"},"data":{"key":"'${KEY_VALUE}'"}}' | \
-            curl -XPOST \
+            curl -i -XPOST \
             --header "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
             --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
             --header "Content-Type: application/json" \
             --data-binary @- \
             "https://kubernetes.default/api/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/secrets?fieldManager=kubectl-create&fieldValidation=Strict"
+          else
+
+            echo "Using existing KEY_VALUE"
           fi
           
           echo "Test available key on vault."
-          if [  -f ${VAULT_PATH} -a $(echo ${KEY_VALUE} | cryptsetup luksOpen --verbose --test-passphrase --key-file - ${VAULT_PATH}) ]; then
+          if [ -f ${VAULT_PATH} ] && $(echo ${KEY_VALUE} | cryptsetup luksOpen --verbose --test-passphrase --key-file - ${VAULT_PATH}); then
             
             echo "Reusing vault: Mount vault."
             echo ${KEY_VALUE} | cryptsetup open --key-file - ${VAULT_PATH} ${VAULT_DEVICE}
@@ -103,6 +113,12 @@ spec:
             echo "Restore data"
             cd ${SUBVOLUME_PATH} && sh /opt/backup/extract.sh
           fi
+
+          echo "Set permissions & ownership"
+          chmod 770 /data/volume
+          echo "Using owner of mount for volume"
+          # workaround for chown: unrecognized option: reference
+          chown $(stat -c '%u:%g' /data/volume/) /data/volume
         securityContext:
           runAsUser: 0
           privileged: true
