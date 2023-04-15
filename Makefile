@@ -18,7 +18,7 @@ common/ssh/authorized_keys:
 
 common/home/.gitconfig:
 	if [ -f ~/.gitconfig ]; then \
-		cp ~/.gitconfig develop/home/.gitconfig; \
+		cp ~/.gitconfig common/home/.gitconfig; \
 	else \
 		touch common/home/.gitconfig; \
 	fi
@@ -28,7 +28,7 @@ kubectl_common: common/home/.gitconfig common/ssh/authorized_keys
 	sleep 0.1
 	kubectl wait deployment -l devtemplate.naviator.github.io/role=bastion --for condition=Available=True --timeout=60s || exit 1
 
-up: common/ssh/authorized_keys develop/home/.gitconfig
+up: common/ssh/authorized_keys common/home/.gitconfig
 	cd local && make up registry builder
 
 down:
