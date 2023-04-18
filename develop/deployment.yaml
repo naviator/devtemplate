@@ -106,11 +106,11 @@ spec:
           mountPath: /default-volume/data
         resources:
           limits:
-            cpu: 6000m
-            memory: 8Gi
+            cpu: 12000m
+            memory: 10Gi
           requests:
-            cpu: 10m
-            memory: 100Mi
+            cpu: 500m
+            memory: 200Mi
       - name: gate
         image: ghcr.io/naviator/bastion
         env:

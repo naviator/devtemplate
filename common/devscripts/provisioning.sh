@@ -27,6 +27,9 @@ install () {
     INSTALL_PACKAGES=${INSTALL_PACKAGES:-"git less zsh"}
 
     if [ -n "${INSTALL_PACKAGES}" ]; then
+
+        export DEBIAN_FRONTEND=noninteractive
+        
         if command -v dnf; then
             dnf install -y ${INSTALL_PACKAGES};
             dnf clean all;

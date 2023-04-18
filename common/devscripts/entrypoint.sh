@@ -28,7 +28,7 @@ fi
 
 ENVFILE="/data/.env"
 # owner does not matter, just has to be readable
-env | grep -vE "^HOME=|^UID=" > "${ENVFILE}"
+printenv | grep -vE "^HOME=|^UID="| sed 's/\(^[^=]*\)=\(.*\)/export \1="\2"/' > "${ENVFILE}"
 
 if [ "${DEV_UID}" -eq $(id -u) ]; then
     tail -f /dev/null &
