@@ -1,0 +1,22 @@
+---
+# Source: redpanda/charts/console/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda-console
+  labels:
+    helm.sh/chart: console-0.5.6
+    app.kubernetes.io/name: console
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/version: "v2.2.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: console
+    app.kubernetes.io/instance: redpanda

@@ -1,0 +1,54 @@
+---
+# Source: redpanda/templates/post-upgrade.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: redpanda-post-upgrade
+  namespace: "redpanda"
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-3.0.10
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-weight": "-5"
+spec:
+  template:
+    metadata:
+      name: "redpanda"
+      labels:
+        app.kubernetes.io/name: redpanda
+        app.kubernetes.io/instance: "redpanda"
+        app.kubernetes.io/component: redpanda-post-upgrade
+    spec:
+      restartPolicy: Never
+      securityContext: 
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+      serviceAccountName: default
+      containers:
+      - name: redpanda-post-upgrade
+        image: vectorized/redpanda:v23.1.6
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            rpk cluster config import -f /tmp/base-config/bootstrap.yaml --brokers redpanda-0.redpanda.redpanda.svc.cluster.local.:9093 --api-urls redpanda-0.redpanda.redpanda.svc.cluster.local.:9644 
+            rpk cluster config set auto_create_topics_enabled true --brokers redpanda-0.redpanda.redpanda.svc.cluster.local.:9093 --api-urls redpanda-0.redpanda.redpanda.svc.cluster.local.:9644 
+            rpk cluster config set delete_retention_ms 5min --brokers redpanda-0.redpanda.redpanda.svc.cluster.local.:9093 --api-urls redpanda-0.redpanda.redpanda.svc.cluster.local.:9644 
+            rpk cluster config set storage_min_free_bytes 1073741824 --brokers redpanda-0.redpanda.redpanda.svc.cluster.local.:9093 --api-urls redpanda-0.redpanda.redpanda.svc.cluster.local.:9644 
+        securityContext: 
+          runAsUser: 101
+          runAsGroup: 101
+        volumeMounts:
+          - name: redpanda
+            mountPath: /tmp/base-config
+          - name: config
+            mountPath: /etc/redpanda
+      volumes:
+        - name: redpanda
+          configMap:
+            name: redpanda
+        - name: config
+          emptyDir: {}

@@ -11,7 +11,9 @@ RUN apk add --update --no-cache \
     # useful for Kubernetes API & other stuff
     curl \
     # backup with versioning
-    borgbackup socat
+    borgbackup socat \
+    # some tools require bash instead of sh
+    bash
 
 ARG USER=dev
 ARG UID=30001

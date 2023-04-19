@@ -1,0 +1,9 @@
+resources:
+- ./namespace.yaml
+- ./secrets.yaml
+- ./service.internal.yaml
+- ./poddisruptionbudget.yaml
+- ./configmap.yaml
+- ./post-upgrade.yaml
+- ./statefulset.yaml
+namespace: redpanda
