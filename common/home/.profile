@@ -39,7 +39,9 @@ if [ -f $HOME/.project_profile ]; then
 fi
 
 if [[ ! -z ${CHECKOUT_PROJECT+x} && ! -z ${PROJECT_DIR+x} && ! -d ${PROJECT_DIR} ]]; then
-    mkdir -p "$(dirname -- "${PROJECT_DIR}")"
+    PROJECT_DIR_PARENT="$(dirname -- "${PROJECT_DIR}")"
+    echo "Creating ${PROJECT_DIR_PARENT}"
+    mkdir -p "${PROJECT_DIR_PARENT}"
     git clone ${CHECKOUT_PROJECT} ${PROJECT_DIR}
 fi
 

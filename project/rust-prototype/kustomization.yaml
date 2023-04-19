@@ -29,7 +29,7 @@ patchesStrategicMerge:
           - name: CHECKOUT_PROJECT
             value: "https://github.com/capnproto/capnproto-rust.git"
           - name: PROJECT_DIR
-            value: "~/src/capn"
+            value: "$HOME/src/capn"
             # remove number of jobs to remove limit
           - name: CARGO_BUILD_JOBS
             value: "1"
