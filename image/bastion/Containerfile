@@ -10,7 +10,8 @@ RUN dnf install -y \
     # client is useful for debugging & rsync
     openssh \
     # backup with versioning
-    borgbackup socat
+    borgbackup socat \
+    && dnf clean all
 
 ARG USER=dev
 ARG UID=30001
