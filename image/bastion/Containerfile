@@ -6,11 +6,9 @@ RUN dnf install -y \
     # newer nsenter
     util-linux \
     # useful tools
-    rsync curl bash \
+    rsync curl bash socat \
     # client is useful for debugging & rsync
     openssh \
-    # backup with versioning
-    borgbackup socat \
     && dnf clean all
 
 ARG USER=dev
