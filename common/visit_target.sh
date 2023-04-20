@@ -29,5 +29,8 @@ else
     echo "=============================="
 fi
 
-exec nsenter -t ${TARGET_PID} -m -u -p -S ${TARGET_UID} -G ${TARGET_GID} \
+# Containers in pod already share Network and IPC namespace.
+# Not sharing user namespace - main & gate containers might have different set of users.
+exec nsenter --target ${TARGET_PID} \
+    --mount --uts --pid --cgroup --setuid ${TARGET_UID} --setgid ${TARGET_GID} --time \
     /bin/sh -c "unset HOME USER LOGNAME MAIL SHELL; export HOME=/data; export UID=${TARGET_UID}; ${TARGET_COMMAND}"

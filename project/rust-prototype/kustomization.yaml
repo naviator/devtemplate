@@ -32,4 +32,4 @@ patchesStrategicMerge:
             value: "$HOME/src/capn"
             # remove number of jobs to remove limit
           - name: CARGO_BUILD_JOBS
-            value: "1"
+            value: "8"
