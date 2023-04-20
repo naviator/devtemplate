@@ -16,7 +16,9 @@ ARG UID=30001
 
 RUN echo "Adding user: ${USER} (${UID})"; \
     adduser --uid ${UID} --shell /bin/sh ${USER} && \
-    sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
+    sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow && \
+    # unlock also root, needed for gate
+    sed -i "s/root:!/root:*/g" /etc/shadow
 
 # no need for motto of the day
 RUN rm /etc/motd

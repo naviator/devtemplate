@@ -9,3 +9,4 @@ Port 2222
 Subsystem sftp internal-sftp
 ClientAliveInterval 180
 ClientAliveCountMax 2
+PermitRootLogin yes
