@@ -12,8 +12,8 @@ fi
 
 SLEEP_COMMAND=${SLEEP_COMMAND:-'tail -f /dev/null'}
 TARGET_PID=$(cat /tmp/.pid)
-UID=$(cat /tmp/.runas | cut -d':' -f1)
-GID=$(cat /tmp/.runas | cut -d':' -f2)
+TARGET_UID=$(cat /tmp/.runas | cut -d':' -f1)
+TARGET_GID=$(cat /tmp/.runas | cut -d':' -f2)
 
 if [ $# -eq 0 ]; then
     TARGET_COMMAND=${TARGET_SHELL:-sh}
@@ -22,12 +22,12 @@ else
 fi
 
 if [ -n "${SSH_AUTH_SOCK}" ]; then
-    chown $UID:$GID -R $(dirname "${SSH_AUTH_SOCK}")
+    chown ${TARGET_UID}:${TARGET_GID} -R $(dirname "${SSH_AUTH_SOCK}")
 else
     echo "=============================="
     echo "Warning: SSH_AUTH_SOCK not set"
     echo "=============================="
 fi
 
-exec nsenter -t ${TARGET_PID} -m -u -p -S ${UID} -G ${GID} \
-    sh -c "unset HOME USER LOGNAME MAIL SHELL; export HOME=/data; export UID=${UID}; ${TARGET_COMMAND}"
+exec nsenter -t ${TARGET_PID} -m -u -p -S ${TARGET_UID} -G ${TARGET_GID} \
+    /bin/sh -c "unset HOME USER LOGNAME MAIL SHELL; export HOME=/data; export UID=${TARGET_UID}; ${TARGET_COMMAND}"
