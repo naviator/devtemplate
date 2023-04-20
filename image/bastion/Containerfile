@@ -1,15 +1,13 @@
-# For some IDEs, remote SSH plugin does not support alpine
-FROM fedora:37
+FROM alpine
 
-RUN dnf install -y \
+RUN apk add --update --no-cache \
     openssh-server \
     # newer nsenter
     util-linux \
     # useful tools
     rsync curl bash socat \
     # client is useful for debugging & rsync
-    openssh \
-    && dnf clean all
+    openssh-client
 
 ARG USER=dev
 ARG UID=30001
@@ -17,7 +15,6 @@ ARG UID=30001
 RUN echo "Adding user: ${USER} (${UID})"; \
     adduser --uid ${UID} --shell /bin/sh ${USER} && \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow && \
-    # unlock also root, needed for gate
     sed -i "s/root:!/root:*/g" /etc/shadow
 
 # no need for motto of the day
