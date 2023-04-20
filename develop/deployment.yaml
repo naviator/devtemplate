@@ -11,7 +11,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: RollingUpdate
+    type: Recreate
   selector:
     matchLabels:
       app: develop
@@ -115,7 +115,8 @@ spec:
         image: ghcr.io/naviator/bastion
         env:
         - name: TARGET_SHELL
-          value: zsh
+          # Remote SSH extension requires bash when sh/zsh just won't do
+          value: bash
         - name: SSH_AUTHORIZED_KEYS
           valueFrom:
             secretKeyRef:
@@ -134,7 +135,10 @@ spec:
           mountPath: /devscripts
         - name: visit-target
           subPath: visit_target.sh
-          mountPath: /etc/profile
+          # some IDEs invoke of "bash" without login ("-l")
+          # could otherwise be:
+          # mountPath: /etc/profile
+          mountPath: /bin/bash
         resources:
           limits:
             memory: 200Mi
