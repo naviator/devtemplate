@@ -13,7 +13,7 @@ ARG USER=dev
 ARG UID=30001
 
 RUN echo "Adding user: ${USER} (${UID})"; \
-    adduser --uid ${UID} --shell /bin/sh ${USER} && \
+    adduser --disabled-password --uid ${UID} --shell /bin/sh ${USER} && \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow && \
     sed -i "s/root:!/root:*/g" /etc/shadow
 
