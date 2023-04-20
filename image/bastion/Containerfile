@@ -1,25 +1,22 @@
-FROM alpine
+# For some IDEs, remote SSH plugin does not support alpine
+FROM fedora:37
 
-RUN apk add --update --no-cache \
+RUN dnf install -y \
     openssh-server \
     # newer nsenter
     util-linux \
-    # useful for file transfers
-    rsync \
+    # useful tools
+    rsync curl bash \
     # client is useful for debugging & rsync
-    openssh-client \
-    # useful for Kubernetes API & other stuff
-    curl \
+    openssh \
     # backup with versioning
-    borgbackup socat \
-    # some tools require bash instead of sh
-    bash
+    borgbackup socat
 
 ARG USER=dev
 ARG UID=30001
 
 RUN echo "Adding user: ${USER} (${UID})"; \
-    adduser --disabled-password --uid ${UID} --shell /bin/sh ${USER} && \
+    adduser --uid ${UID} --shell /bin/sh ${USER} && \
     sed -i "s/${USER}:!/${USER}:*/g" /etc/shadow
 
 # no need for motto of the day
