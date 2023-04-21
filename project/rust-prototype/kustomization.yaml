@@ -22,7 +22,7 @@ patchesStrategicMerge:
           runAsUser: 0
         containers:
         - name: main
-          image: quay.io/instrumentisto/rust:1.68.2-buster
+          image: quay.io/instrumentisto/rust:1.68.2-bullseye	
           env:
           - name: INSTALL_PACKAGES
             value: "git less zsh capnproto libcapnp-dev"
@@ -32,4 +32,4 @@ patchesStrategicMerge:
             value: "$HOME/src/capn"
             # remove number of jobs to remove limit
           - name: CARGO_BUILD_JOBS
-            value: "8"
+            value: "4"

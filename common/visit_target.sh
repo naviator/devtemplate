@@ -33,4 +33,4 @@ fi
 # Not sharing user namespace - main & gate containers might have different set of users.
 exec nsenter --target ${TARGET_PID} \
     --mount --uts --pid --cgroup --setuid ${TARGET_UID} --setgid ${TARGET_GID} --time \
-    /bin/sh -c "unset HOME USER LOGNAME MAIL SHELL; export HOME=/data; export UID=${TARGET_UID}; ${TARGET_COMMAND}"
+    /bin/sh -c "unset HOME USER LOGNAME MAIL SHELL; export HOME=/data; export UID=${TARGET_UID}; export SHELL=${TARGET_SHELL}; ${TARGET_COMMAND}"

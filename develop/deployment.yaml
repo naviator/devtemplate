@@ -107,9 +107,6 @@ spec:
         - name: user-home
           mountPath: /default-volume/data
         resources:
-          limits:
-            cpu: 12000m
-            memory: 10Gi
           requests:
             cpu: 500m
             memory: 200Mi
@@ -117,8 +114,7 @@ spec:
         image: ghcr.io/naviator/bastion
         env:
         - name: TARGET_SHELL
-          # Remote SSH extension requires bash when sh/zsh just won't do
-          value: bash
+          value: zsh
         - name: SSH_AUTHORIZED_KEYS
           valueFrom:
             secretKeyRef:
@@ -137,14 +133,14 @@ spec:
           mountPath: /devscripts
         - name: visit-target
           subPath: visit_target.sh
-          # some IDEs invoke of "bash" without login ("-l")
-          # could otherwise be:
+          mountPath: /root/.bashrc
+        - name: visit-target
+          subPath: visit_target.sh
           mountPath: /etc/profile
-          # mountPath: /bin/bash
+        - name: visit-target
+          subPath: visit_target.sh
+          mountPath: /usr/local/bin/bash
         resources:
-          limits:
-            memory: 200Mi
-            cpu: 1000m
           requests:
             memory: 10Mi
             cpu: 10m
