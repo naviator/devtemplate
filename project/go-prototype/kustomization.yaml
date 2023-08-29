@@ -25,7 +25,7 @@ patchesStrategicMerge:
           image: golang:1.20.3-buster
           env:
           - name: INSTALL_PACKAGES
-            value: "git less zsh bash"
+            value: "git less zsh bash protobuf-compiler"
           - name: GOROOT
             value: "/usr/local/go"
           - name: GOPATH
