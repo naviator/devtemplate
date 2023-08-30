@@ -22,7 +22,7 @@ patchesStrategicMerge:
           runAsUser: 0
         containers:
         - name: main
-          image: golang:1.20.3-buster
+          image: mcr.microsoft.com/devcontainers/go:1-1.21-bookworm
           env:
           - name: INSTALL_PACKAGES
             value: "git less zsh bash protobuf-compiler"
