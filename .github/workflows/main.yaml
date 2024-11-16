@@ -27,7 +27,6 @@ jobs:
       with:
         image: ${{ steps.build-image-bastion.outputs.image }}
         tags: ${{ steps.build-image-bastion.outputs.tags }}
-        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Print image url
@@ -58,10 +57,10 @@ jobs:
       with:
         image: ${{ steps.build-image-backup.outputs.image }}
         tags: ${{ steps.build-image-backup.outputs.tags }}
-        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+# Building big image is currently slow in Github CI
   build-develop:
     name: Build Develop
     runs-on: ubuntu-latest
@@ -86,7 +85,6 @@ jobs:
       with:
         image: ${{ steps.build-image-develop.outputs.image }}
         tags: ${{ steps.build-image-develop.outputs.tags }}
-        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
